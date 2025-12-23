@@ -4,6 +4,37 @@
     "sex": "female",
     "patterns": [
         {
+            "date": "2025/12/23",
+            "actions": [
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "130ml",
+                    "time_start": "00:03"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "00:10",
+                    "time_end": "07:07"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "07:18"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "130ml",
+                    "time_start": "07:37"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "08:57"
+                }
+            ]
+        },
+        {
             "date": "2025/12/22",
             "actions": [
                 {
@@ -94,7 +125,13 @@
                 },
                 {
                     "action": "睡眠",
-                    "time_start": "21:57"
+                    "time_start": "21:57",
+                    "time_end": "23:45"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "23:45"
                 }
             ]
         },
