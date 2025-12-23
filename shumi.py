@@ -1,8 +1,10 @@
 from google import genai
 import json
 import time
+import datetime
+import os
 
-GEMINI_API_KEY = "AIzaSyBamJpJPhaWweT0AGiuZ_104avUerAhSOc"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Open the file in read mode ('r')
@@ -26,36 +28,72 @@ def getPatterns(action_type: str = "喝奶"):
     ]
 
 
+def getTime(timeStr: str) -> datetime.datetime:
+    time_parts = timeStr.split(":")
+    now = datetime.datetime.now()
+    return datetime.datetime(
+        now.year,
+        now.month,
+        now.day,
+        int(time_parts[0]),
+        int(time_parts[1]),
+    )
+
+
+def isWithinTimeWindow(
+    timeWindowHour: int, time1: datetime.datetime, time2: datetime.datetime
+) -> bool:
+    time_difference = min(abs(time1 - time2), abs(time2 - time1))
+    return abs(time_difference.seconds) <= (timeWindowHour * 60 * 60)
+
+
+def getTimePatterns():
+    return [
+        {
+            "date": day["date"],
+            "actions": [
+                action
+                for action in day.get("actions", [])
+                if isWithinTimeWindow(
+                    2, getTime(action.get("time_start")), datetime.datetime.now()
+                )
+            ],
+        }
+        for day in patterns
+    ]
+
+
+basic_info = shumi_pattern["info"]
 patterns = shumi_pattern["patterns"]
 milk_patterns = getPatterns("喝奶")
 daiper_patterns = getPatterns("换尿布")
 sleep_patterns = getPatterns("睡眠")
+time_patterns = getTimePatterns()
 
 user_query = input(
     "Ask your question (or Press Enter to see the default analysis): "
 ).strip()
 
 prompts = [
-    # user query
-    f"User's initial query {user_query}.",
     # context
-    f"Here's the behavior pattern of my daughter 施舒米 {shumi_pattern}.",
+    f"Here's the basic info of my daughter 施舒米 {basic_info}",
     "----------",
     # role-specific prompt
     "You are an infant behavior prediction assistant which offers emotional support for parents.",
     # COT
     "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points.",
+    # user query.
     (
         f"""
         Please do the following steps:
-        1. Predict her next possible actions;
+        1. Based on {time_patterns}, predict her next possible actions and time ranges;
         2. Summarize her actions in the last 3 days in a clear and succinct way;
         3. Based on {milk_patterns}, analyze her long-term milk drinking behavior;
         4. Based on {daiper_patterns}, analyzer her long-term daiper behavior;
         5. Based on {sleep_patterns}, analyze her long-term sleep behavior;
         """
         if len(user_query) == 0
-        else "Please answer user's initial query;"
+        else f"Based on 施舒米's behavior patterns {patterns}, please answer user's initial query;"
     ),
     "----------",
     # user context prompt.
