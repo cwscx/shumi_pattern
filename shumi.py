@@ -59,8 +59,8 @@ prompts = [
     "----------",
     # user context prompt.
     f"""
-    Use the following user profile to personalize the output. 
-    Write in Chinese. If a day hasn't finished yet, only use that date's data for prediction, but not for summarization. 
+    Use the following user profile to personalize the output.
+    Write in Chinese. If a day hasn't finished yet, only use that date's data for prediction, but not for summarization.
     """,
 ]
 
