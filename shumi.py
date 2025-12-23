@@ -35,24 +35,33 @@ user_query = input(
 ).strip()
 
 prompts = [
-    f"User's initial query {user_query}",  # user query
-    f"Here's the behavior pattern of my daughter 施舒米 {shumi_pattern}。",  # context
+    # user query
+    f"User's initial query {user_query}",
+    # context
+    f"Here's the behavior pattern of my daughter 施舒米 {shumi_pattern}。",
     "----------",
-    "You are an infant behavior prediction assistant.",  # role-specific prompt
-    "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points.",  # COT
+    # role-specific prompt
+    "You are an infant behavior prediction assistant which offers emotional support for parents.",
+    # COT
+    "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points.",
     (
-        f"""Please do the following steps：
+        f"""
+        Please do the following steps：
         1. Predict her next possible actions;
         2. Summarize her actions in the last 3 days in a clear and succinct way;
         3. Based on {milk_patterns}, analyze her long-term milk drinking behavior;
         4. Based on {daiper_patterns}, analyzer her long-term daiper behavior;
         5. Based on {sleep_patterns}, analyze her long-term sleep behavior;
-    """
+        """
         if len(user_query) == 0
         else "Please answer user's initial query;"
     ),
     "----------",
-    "Use the following user profile to personalize the output. Write in Chinese.",  # user context prompt.
+    # user context prompt.
+    f"""
+    Use the following user profile to personalize the output. 
+    Write in Chinese. If a day hasn't finished yet, only use that date's data for prediction, but not for summarization. 
+    """,
 ]
 
 response = client.models.generate_content(
