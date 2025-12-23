@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Tracker - 施舒米</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}"> <style>
+        /* Keep your CSS here or move to a separate .css file in the static folder */
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px; }
+        button { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-milk { background: #e3f2fd; color: #1976d2; }
+        .btn-sleep { background: #f3e5f5; color: #7b1fa2; }
+        .btn-diaper { background: #fff3e0; color: #f57c00; }
+        #dynamicInputs { margin-top: 15px; padding: 10px; border: 1px solid #eee; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>👶 施舒米 Tracker</h2>
+    
+    <div class="input-group">
+        <label>当前日期</label>
+        <input type="date" id="currentDate">
+    </div>
+
+    <div class="btn-grid">
+        <button class="btn-milk" onclick="addAction('喝奶')">🍼 喝奶</button>
+        <button class="btn-sleep" onclick="addAction('睡眠')">😴 睡眠</button>
+        <button class="btn-diaper" onclick="addAction('换尿布')">🧷 尿布</button>
+    </div>
+
+    <div id="dynamicInputs"></div>
+
+    <div id="logList">
+        <strong>今日记录:</strong>
+        <div id="entries"></div>
+    </div>
+</div>
+
+<script src="{% static 'script.js' %}"></script>
+</body>
+</html>
