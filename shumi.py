@@ -81,12 +81,13 @@ prompts = [
     # role-specific prompt
     "You are an infant behavior prediction assistant which offers emotional support for parents.",
     # COT
-    "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points.",
+    "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points. ",
+    "For example, when you predict, you should calculate the time difference between each actions instead of just predicting from the previous timestamp.",
     # user query.
     (
         f"""
         Please do the following steps:
-        1. Based on {time_patterns}, predict her next possible actions and time ranges;
+        1. Based on {time_patterns}, predict her next possible actions and time ranges with confidence interval;
         2. Summarize her actions in the last 3 days in a clear and succinct way;
         3. Based on {milk_patterns}, analyze her long-term milk drinking behavior;
         4. Based on {daiper_patterns}, analyzer her long-term daiper behavior;
