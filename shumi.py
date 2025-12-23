@@ -1,5 +1,6 @@
 from google import genai
 import json
+import time
 
 GEMINI_API_KEY = "AIzaSyBamJpJPhaWweT0AGiuZ_104avUerAhSOc"
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -64,7 +65,16 @@ prompts = [
     """,
 ]
 
-response = client.models.generate_content(
+start_time = time.time()
+
+stream = client.models.generate_content_stream(
     model="gemini-2.5-flash", contents="\n".join(prompts)
 )
-print(response.text)
+out = []
+for chunk in stream:
+    if getattr(chunk, "text", None):
+        print(chunk.text, end="", flush=True)
+        out.append(chunk.text)
+
+print()
+print(f"[latency] total seconds: {time.time() - start_time:.2f}")
