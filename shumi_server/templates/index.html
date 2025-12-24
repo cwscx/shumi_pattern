@@ -35,10 +35,27 @@
 
     <div id="dynamicInputs"></div>
 
-    <div id="logList">
-        <strong>今日记录:</strong>
-        <div id="entries"></div>
+    <div class="log-list" id="logList">
+    <strong>今日记录 ({{ today_actions|length }} 条):</strong>
+    <div id="entries">
+        {% if today_actions %}
+            {% for item in today_actions %}
+                <div class="entry-item">
+                    <span class="time">[{{ item.time_start }}]</span>
+                    <span class="action">**{{ item.action }}**</span>
+                    {% if item.type %} - {{ item.type }}{% endif %}
+                    {% if item.volume %} - {{ item.volume }}{% endif %}
+                    {% if item.time_end %} (至 {{ item.time_end }}){% endif %}
+                    <button class="btn-delete" onclick="deleteAction('{{ item.date }}', {{ forloop.counter0 }})">
+                    &times;
+                </button>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #999;">今日暂无记录</p>
+        {% endif %}
     </div>
+</div>
 </div>
 
 <script src="{% static 'script.js' %}"></script>

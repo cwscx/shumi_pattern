@@ -63,9 +63,32 @@ async function saveEntry(action) {
         });
 
         if (response.ok) {
-            alert('记录已同步到服务器');
-            document.getElementById('dynamicInputs').style.display = 'none';
+            window.location.reload();
             // You could trigger a function here to refresh a history list
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function deleteAction(dateStr, index) {
+    if (!confirm("确定要删除这条记录吗？")) return;
+
+    // If dateStr isn't passed from the template, grab it from the date picker
+    const date = dateStr || document.getElementById('currentDate').value.replaceAll('-', '/');
+
+    try {
+        const response = await fetch('/delete-action/', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ date: date, index: index })
+        });
+
+        if (response.ok) {
+            window.location.reload(); // Refresh to show updated list
         }
     } catch (error) {
         console.error('Error:', error);

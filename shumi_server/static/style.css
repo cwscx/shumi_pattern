@@ -1,0 +1,37 @@
+.entry-item {
+    display: flex;
+    justify-content: space-between; /* Pushes delete button to the right */
+    align-items: center;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.entry-item .time {
+    color: #888;
+    font-family: monospace;
+}
+
+.entry-item .action {
+    color: #ff85a2;
+}
+
+.btn-delete {
+    background: #ffeded;
+    color: #ff4d4d;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.btn-delete:hover {
+    background: #ff4d4d;
+    color: white;
+}

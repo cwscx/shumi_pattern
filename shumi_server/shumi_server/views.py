@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -8,7 +9,19 @@ from django.views.decorators.csrf import csrf_exempt
 JSON_FILE_PATH = os.path.join(os.path.dirname(__file__), 'shumi.json')
 
 def index_view(request):
-    return render(request, 'index.html')
+    today_str = datetime.now().strftime('%Y/%m/%d')
+    today_actions = []
+    
+    if os.path.exists(JSON_FILE_PATH):
+        with open(JSON_FILE_PATH, 'r', encoding='utf-8') as f:
+            db = json.load(f)
+            # Find the pattern for today
+            day_entry = next((p for p in db.get('patterns', []) if p['date'] == today_str), None)
+            if day_entry:
+                today_actions = day_entry['actions']
+    
+    return render(request, 'index.html', {'today_actions': today_actions})
+
 
 @csrf_exempt
 def save_baby_data(request):
@@ -47,3 +60,32 @@ def save_baby_data(request):
             return JsonResponse({"status": "success"})
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+@csrf_exempt
+def delete_baby_action(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            target_date = data.get('date')
+            target_index = data.get('index')
+
+            if os.path.exists(JSON_FILE_PATH):
+                with open(JSON_FILE_PATH, 'r', encoding='utf-8') as f:
+                    db = json.load(f)
+                
+                # Find the correct day
+                for day_entry in db.get('patterns', []):
+                    if day_entry['date'] == target_date:
+                        # Remove the item at the specific index
+                        if 0 <= target_index < len(day_entry['actions']):
+                            day_entry['actions'].pop(target_index)
+                            break
+                
+                # Save the updated data
+                with open(JSON_FILE_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(db, f, ensure_ascii=False, indent=4)
+                
+                return JsonResponse({"status": "success"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
+    return JsonResponse({"status": "invalid method"}, status=405)

@@ -23,4 +23,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index_view, name='index'), # Template renderer
     path('save-baby-data/', views.save_baby_data, name='save_data'),
+    path('delete-action/', views.delete_baby_action, name='delete_data'),
 ]
