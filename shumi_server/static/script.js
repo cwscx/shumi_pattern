@@ -15,7 +15,7 @@ function addAction(actionType) {
 
     if (actionType === '喝奶') {
         html += `
-            <label>类型</label><select id="subType"><option>配方奶</option><option>母乳</option></select>
+            <label>类型</label><select id="subType"><option>配方奶</option><option>瓶喂母乳</option><option>亲喂母乳</option></select>
             <label>奶量 (ml)</label><input type="text" id="volume" value="130ml">
         `;
     } else if (actionType === '换尿布') {
@@ -72,10 +72,7 @@ async function saveEntry(action) {
 }
 
 async function deleteAction(dateStr, index) {
-    if (!confirm("确定要删除这条记录吗？")) return;
-
-    // If dateStr isn't passed from the template, grab it from the date picker
-    const date = dateStr || document.getElementById('currentDate').value.replaceAll('-', '/');
+    if (!confirm(`确定要删除 ${dateStr} 的这条记录吗？`)) return;
 
     try {
         const response = await fetch('/delete-action/', {
@@ -84,14 +81,56 @@ async function deleteAction(dateStr, index) {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({ date: date, index: index })
+            body: JSON.stringify({ 
+                date: dateStr, // Use the specific date from the group
+                index: index 
+            })
         });
 
         if (response.ok) {
-            window.location.reload(); // Refresh to show updated list
+            window.location.reload();
         }
     } catch (error) {
         console.error('Error:', error);
+    }
+}
+
+async function generateInsights() {
+    const query = document.getElementById('userQuery').value || "";
+    const aiBtn = document.getElementById('aiBtn');
+    const aiText = document.getElementById('aiText');
+    const aiContent = document.getElementById('aiContent');
+
+    aiBtn.disabled = true;
+    aiBtn.innerText = "⏳ 正在运行分析...";
+    aiContent.style.display = "block";
+
+    try {
+        const response = await fetch('/get-insights/', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ query: query })
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+            // Simple hack to handle line breaks. 
+            // For real markdown, you could use a library like 'marked.js'
+            aiText.innerHTML = data.insights
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\* /g, '• ');
+        } else {
+            aiText.innerText = "Error: " + data.message;
+        }
+    } catch (e) {
+        aiText.innerText = "Failed to connect to AI server.";
+    } finally {
+        aiBtn.disabled = false;
+        aiBtn.innerText = "✨ 重新运行 AI 分析";
     }
 }
 

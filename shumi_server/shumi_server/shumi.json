@@ -160,6 +160,49 @@
                     "action": "换尿布",
                     "time_start": "12:15",
                     "type": "嘘嘘"
+                },
+                {
+                    "action": "喝奶",
+                    "time_start": "12:50",
+                    "type": "配方奶",
+                    "volume": "90ml"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "13:38",
+                    "time_end": "15:42"
+                },
+                {
+                    "action": "换尿布",
+                    "time_start": "16:22",
+                    "type": "嘘嘘"
+                },
+                {
+                    "action": "喝奶",
+                    "time_start": "16:30",
+                    "type": "母乳",
+                    "volume": "120ml"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "17:38",
+                    "time_end": "18:39"
+                },
+                {
+                    "action": "换尿布",
+                    "time_start": "19:28",
+                    "type": "嘘嘘"
+                },
+                {
+                    "action": "喝奶",
+                    "time_start": "19:33",
+                    "type": "母乳",
+                    "volume": "130ml"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "20:47",
+                    "time_end": "23:59"
                 }
             ]
         }
