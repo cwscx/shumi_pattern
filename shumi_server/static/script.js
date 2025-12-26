@@ -137,43 +137,59 @@ async function generateInsights() {
 // Prediction
 async function updatePrediction() {
     const actionEl = document.getElementById('nextAction');
+    const loaderEl = document.getElementById('shumiLoader');
     const meterWrap = document.getElementById('confidenceWrapper');
-    const meterFill = document.getElementById('meterFill');
-    const confVal = document.getElementById('confValue');
     const forecastBtn = document.getElementById('forecastBtn');
-
-    forecastBtn.disabled = true;
-    actionEl.innerText = "信号解析中...";
+    const meterFill = document.getElementById('meterFill');
+    const confValue = document.getElementById('confValue');
+    const reasoningSec = document.getElementById('reasoningSection');
+    const expandBtn = document.getElementById('expandBtn');
+    
+    // 1. Enter Loading State
+    actionEl.style.display = "none";
     meterWrap.style.display = "none";
+    loaderEl.style.display = "flex";
+    forecastBtn.disabled = true;
+    forecastBtn.innerText = "⚡ 正在同步信号...";
+    reasoningSec.style.display = "none";
 
     try {
         const response = await fetch('/get-prediction/', {
-            method: 'POST', // This MUST be POST to match your Django view
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken') // Ensure this function exists in your JS
+                'X-CSRFToken': getCookie('csrftoken')
             },
-            // Even if body is empty, method must be POST
-            body: JSON.stringify({}) 
+            body: JSON.stringify({})
         });
         
         const data = await response.json();
         
         if (data.status === 'success') {
+            console.log(data);
+            // 2. Hide Loader & Show Result
+            loaderEl.style.display = "none";
+            actionEl.style.display = "block";
             actionEl.innerText = data.prediction;
+            reasoningSec.innerText = data.reasoning;
+            expandBtn.style.display = "block";
             
-            // Show and animate meter
+            // 3. Animate Confidence Meter
             meterWrap.style.display = "block";
             setTimeout(() => {
-                meterFill.style.width = data.confidence + "%";
-                confVal.innerText = data.confidence + "%";
+                const conf = parseInt(data.confidence);
+                meterFill.style.width = conf + "%";
+                confValue.innerText = conf + "%";
+                
+                // Color Logic
+                if (conf > 80) meterFill.style.backgroundColor = "#4caf50";
+                else if (conf > 50) meterFill.style.backgroundColor = "#ffeb3b";
+                else meterFill.style.backgroundColor = "#f44336";
             }, 100);
-
-            document.getElementById('reasoningSection').innerText = data.reasoning;
-            document.getElementById('expandBtn').style.display = "inline-block";
         }
     } catch (e) {
-        console.log(e)
+        loaderEl.style.display = "none";
+        actionEl.style.display = "block";
         actionEl.innerText = "连接失败";
     } finally {
         forecastBtn.disabled = false;

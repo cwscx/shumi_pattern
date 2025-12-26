@@ -89,32 +89,40 @@
 
         <div class="right-col">
             <div class="card prediction-card">
-                <div class="card-header">
-                    <h3>🔮 幼崽行为预判</h3>
-                </div>
-
-                <div class="prediction-main">
-                    <span id="nextAction">待命中...</span>
-                </div>
-
-                <div id="confidenceWrapper" style="display: none; margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
-                        <span>信号匹配度 (Confidence)</span>
-                        <span id="confValue">0%</span>
-                    </div>
-                    <div class="meter-container">
-                        <div id="meterFill" class="meter-fill" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <div id="reasoningSection" style="display: none;">...</div>
+    <div class="card-header">
+        <h3>🔮 幼崽行为预判</h3>
+    </div>
     
-                <div class="prediction-controls">
-                    <button class="btn-get-forecast" id="forecastBtn" onclick="updatePrediction()">📡 获取最新预判</button>
-                    <button class="btn-expand" id="expandBtn" onclick="toggleReasoning()" style="display: none;">查看推理详情</button>
-                </div>
+    <div id="predictionDisplay" class="prediction-main">
+        <div id="shumiLoader" class="shumi-loader" style="display: none;">
+            <div class="flip-container">
+                <img src="{% static 'images/shumi_3.PNG' %}" class="shumi-flip-pic">
             </div>
+            <p class="loading-subtext">
+                猜猜我接下来要干嘛<span class="dot-ani"></span>
+            </p>
+        </div>
+        
+        <span class="prediction-text" id="nextAction"></span>
+    </div>
 
+    <div id="confidenceWrapper" style="display: none; margin-top: 20px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+            <span>信号匹配度</span>
+            <span id="confValue">0%</span>
+        </div>
+        <div class="meter-container">
+            <div id="meterFill" class="meter-fill"></div>
+        </div>
+    </div>
+
+    <div id="reasoningSection" style="display: none;">...</div>
+
+    <div class="prediction-controls">
+        <button class="btn-get-forecast" id="forecastBtn" onclick="updatePrediction()">📡 发送信号</button>
+        <button class="btn-expand" id="expandBtn" onclick="toggleReasoning()" style="display: none;">查看推理详情</button>
+    </div>
+</div>
             <div class="card ai-card">
                 <h3>🤖 米语翻译机</h3>
                 <p class="subtitle">🍼 把屎尿屁翻译成人类能听懂的建议</p>
