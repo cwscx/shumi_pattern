@@ -27,7 +27,7 @@ function addAction(actionType) {
     }
 
     html += `<label>开始时间</label><input type="time" id="timeStart" value="${getCurrentTime()}">`;
-    html += `<button style="margin-top:10px; width:100%; background:#4caf50; color:white;" onclick="saveEntry('${actionType}')">确认保存</button>`;
+    html += `<button style="margin-top:10px; width:100%; height: 40px; background:#4caf50; color:white;" onclick="saveEntry('${actionType}')">确认保存</button>`;
     container.innerHTML = html;
 }
 
@@ -130,9 +130,148 @@ async function generateInsights() {
         aiText.innerText = "Failed to connect to AI server.";
     } finally {
         aiBtn.disabled = false;
-        aiBtn.innerText = "✨ 重新运行 AI 分析";
+        aiBtn.innerText = "🚀 重新运行分析";
     }
 }
+
+// Prediction
+async function updatePrediction() {
+    const actionEl = document.getElementById('nextAction');
+    const meterWrap = document.getElementById('confidenceWrapper');
+    const meterFill = document.getElementById('meterFill');
+    const confVal = document.getElementById('confValue');
+    const forecastBtn = document.getElementById('forecastBtn');
+
+    forecastBtn.disabled = true;
+    actionEl.innerText = "信号解析中...";
+    meterWrap.style.display = "none";
+
+    try {
+        const response = await fetch('/get-prediction/', {
+            method: 'POST', // This MUST be POST to match your Django view
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // Ensure this function exists in your JS
+            },
+            // Even if body is empty, method must be POST
+            body: JSON.stringify({}) 
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            actionEl.innerText = data.prediction;
+            
+            // Show and animate meter
+            meterWrap.style.display = "block";
+            setTimeout(() => {
+                meterFill.style.width = data.confidence + "%";
+                confVal.innerText = data.confidence + "%";
+            }, 100);
+
+            document.getElementById('reasoningSection').innerText = data.reasoning;
+            document.getElementById('expandBtn').style.display = "inline-block";
+        }
+    } catch (e) {
+        console.log(e)
+        actionEl.innerText = "连接失败";
+    } finally {
+        forecastBtn.disabled = false;
+        forecastBtn.innerText = "📡 再次同步预判";
+    }
+}
+
+function toggleReasoning() {
+    const sec = document.getElementById('reasoningSection');
+    const btn = document.getElementById('expandBtn');
+    if (sec.style.display === "none") {
+        sec.style.display = "block";
+        btn.innerText = "收起详情";
+    } else {
+        sec.style.display = "none";
+        btn.innerText = "查看推理详情";
+    }
+}
+
+
+// The chart logic
+document.addEventListener('DOMContentLoaded', function() {
+    const dataElement = document.getElementById('chart-data');
+    if (!dataElement) return;
+    const rawData = JSON.parse(dataElement.textContent);
+
+    const ctx = document.getElementById('routineChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            datasets: [
+                {
+                    label: '😴 睡眠',
+                    data: rawData.sleep,
+                    backgroundColor: 'rgba(156, 39, 176, 0.7)',
+                    borderColor: '#9c27b0',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    grouped: false // Keeps all blocks in the same column
+                },
+                {
+                    label: '🍼 喝奶',
+                    data: rawData.milk,
+                    backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                    borderColor: '#2196f3',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    grouped: false
+                },
+                {
+                    label: '🧷 尿布',
+                    data: rawData.diaper,
+                    backgroundColor: 'rgba(255, 152, 0, 0.7)',
+                    borderColor: '#ff9800',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    grouped: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // Required to respect the container's height
+            scales: {
+                x: {
+                    title: { display: true, text: '观察日期' },
+                    grid: { display: false } // Cleans up the look
+                },
+                y: {
+                    min: 0,
+                    max: 24,
+                    reverse: true, 
+                    title: { display: true, text: '时间 (点击柱状块查看详情)' },
+                    ticks: {
+                        stepSize: 1, // Show a label for every single hour
+                        autoSkip: false, // Force all hour labels to show
+                        callback: value => {
+                            // Formats 0-24 into 00:00 - 24:00
+                            return value.toString().padStart(2, '0') + ":00";
+                        },
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: '#ececec' // Light grid lines for every hour
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+});
 
 // Helper function to get CSRF token from cookies
 function getCookie(name) {

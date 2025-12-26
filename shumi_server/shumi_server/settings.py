@@ -107,11 +107,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
 USE_I18N = True
 
-USE_TZ = True
+# Set this to False so Django uses your specific timezone for datetimes
+USE_TZ = False 
+
+# Set to PST
+TIME_ZONE = 'America/Los_Angeles'
+
+
 
 
 # Static files (CSS, JavaScript, Images)

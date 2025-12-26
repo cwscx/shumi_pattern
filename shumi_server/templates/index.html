@@ -10,17 +10,26 @@
 <body>
 
 <div class="app-wrapper">
-    <header>
+    <!-- <header>
         <h1>👶 施舒米 Tracker</h1>
     </header>
-
+ -->
+    <header class="observation-header">
+        <div class="status-badge">
+            <span class="pulse"></span> 实时监测中
+        </div>
+        <h1 class="main-title">施舒米 幼崽观察站</h1>
+        <p class="header-subtitle">🔬 24/7 实时监测人类幼崽的迷惑行为</p>
+    </header>
     <div class="main-container">
         <div class="left-col">
             <div class="card">
-                <h3>📝 记录新事件</h3>
+                <h3>📂 录入情报数据</h3> <p class="subtitle" style="font-size: 0.85em; color: #888; margin-bottom: 15px;">
+            记录每一个屎尿屁的瞬间...
+        </p>
                 <div class="input-group">
-                    <label>选择日期</label>
-                    <input type="date" id="currentDate">
+                    <label>情报发生日期</label>
+                    <input type="date" id="currentDate" value="{{ current_pst_date }}">
                 </div>
 
                 <div class="btn-grid">
@@ -33,45 +42,86 @@
             </div>
 
             <div class="card log-card">
-    <h3>📋 最近 5 天记录</h3>
-    <div id="entries">
-        {% if past_days_data %}
-            {% for day in past_days_data %}
-                <div class="day-group" style="margin-bottom: 20px;">
-                    <div class="day-header" style="background: #f8f9fa; padding: 5px 10px; border-radius: 5px; font-weight: bold; color: #555;">
-                        📅 {{ day.date }}
-                    </div>
-                    
-                    {% for item in day.actions %}
-                        <div class="entry-item">
-                            <div>
-                                <span class="time">[{{ item.time_start }}]</span>
-                                <strong>{{ item.action }}</strong>
-                                <span class="details">
-                                    {% if item.type %} · {{ item.type }}{% endif %}
-                                    {% if item.volume %} · {{ item.volume }}{% endif %}
-                                </span>
-                            </div>
-                            <button class="btn-delete" onclick="deleteAction('{{ day.date }}', {{ forloop.counter0 }})">&times;</button>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        {% else %}
-            <p class="empty-msg">暂无记录</p>
-        {% endif %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div class="card chart-card">
+        <h3>📈 米宝行为时间轴 (24h)</h3>
+        <div class="chart-container">
+            <canvas id="routineChart"></canvas>
+        </div>
     </div>
+    <div id="entries">
+    {% if past_days_data %}
+        {% for day in past_days_data %}
+            <div class="day-group">
+                <div class="day-header">📅 {{ day.date }}</div>
+                
+                {% for item in day.actions %}
+                    <div class="entry-item 
+                        {% if item.action == '喝奶' %}entry-milk
+                        {% elif item.action == '睡眠' %}entry-sleep
+                        {% elif item.action == '换尿布' %}entry-diaper{% endif %}">
+                        
+                        <div class="entry-content">
+                            <span class="time">[{{ item.time_start }}]</span>
+                            <strong>{{ item.action }}</strong>
+                            <span class="details">
+                                {% if item.type %} · {{ item.type }}{% endif %}
+                                {% if item.volume %} · {{ item.volume }}{% endif %}
+                                
+                                {% if item.duration %}
+                                    <span class="duration-tag">⏱ {{ item.duration }}</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <button class="btn-delete" onclick="deleteAction('{{ day.date }}', {{ item.index_in_file }})">
+                            &times;
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
 </div>
         </div>
 
         <div class="right-col">
+            <div class="card prediction-card">
+                <div class="card-header">
+                    <h3>🔮 幼崽行为预判</h3>
+                </div>
+
+                <div class="prediction-main">
+                    <span id="nextAction">待命中...</span>
+                </div>
+
+                <div id="confidenceWrapper" style="display: none; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                        <span>信号匹配度 (Confidence)</span>
+                        <span id="confValue">0%</span>
+                    </div>
+                    <div class="meter-container">
+                        <div id="meterFill" class="meter-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="reasoningSection" style="display: none;">...</div>
+    
+                <div class="prediction-controls">
+                    <button class="btn-get-forecast" id="forecastBtn" onclick="updatePrediction()">📡 获取最新预判</button>
+                    <button class="btn-expand" id="expandBtn" onclick="toggleReasoning()" style="display: none;">查看推理详情</button>
+                </div>
+            </div>
+
             <div class="card ai-card">
-                <h3>✨ Gemini AI 智能分析</h3>
-                <p class="subtitle">基于全量数据提供预测与规律分析</p>
+                <h3>🤖 米语翻译机</h3>
+                <p class="subtitle">🍼 把屎尿屁翻译成人类能听懂的建议</p>
                 
                 <textarea id="userQuery" placeholder="输入特定问题（例如：最近奶量有减少吗？）或保持空白以获取深度全项报告..." rows="3"></textarea>
                 
-                <button class="btn-ai" id="aiBtn" onclick="generateInsights()">🚀 运行 AI 深度分析</button>
+                <button class="btn-ai" id="aiBtn" onclick="generateInsights()">🚀 启动舒米心智破解程序</button>
                 
                 <div id="aiContent" class="ai-response-area" style="display: none;">
                     <div id="aiText">正在读取 施舒米 的成长记录...</div>
@@ -81,6 +131,9 @@
     </div>
 </div>
 
+<script id="chart-data" type="application/json">
+    {{ chart_data_json|safe }}
+</script>
 <script src="{% static 'script.js' %}"></script>
 </body>
 </html>
