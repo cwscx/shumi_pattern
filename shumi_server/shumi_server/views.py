@@ -210,14 +210,33 @@ def get_gemini_insights(request):
 
         # Build Prompts (Your CoT Logic)
         prompts = [
-            f"Here's the basic info of my daughter 施舒米 {basic_info}",
-            "You are an infant behavior prediction assistant which offers emotional support for parents.",
-            "If there is a reasoning process, think step by step in bullet points. Calculate time differences for predictions.",
-            (
-                f"Steps: 1. Predict next actions based on {time_patterns}; 2. Summarize last 3 days; 3. Analyze long-term milk {milk_patterns}; 4. Analyze diapers {daiper_patterns}; 5. Analyze sleep {sleep_patterns}."
-                if not user_query else f"Based on patterns {patterns}, answer: {user_query}"
-            ),
-            "Use the profile to personalize. Write in Chinese. Use Markdown formatting for clarity."
+           f"Here's the basic info of my daughter 施舒米 {basic_info}",
+    "----------",
+    # role-specific prompt
+    "You are an infant behavior prediction assistant which offers emotional support for parents.",
+    # COT
+    "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points. ",
+    "For example, when you predict, you should calculate the time difference between each actions instead of just predicting from the previous timestamp.",
+    # user query.
+    (
+        f"""
+        Please do the following steps:
+        1. Based on {time_patterns}, predict her next possible actions and time ranges with confidence interval;
+        2. Summarize her actions in the last 3 days in a clear and succinct way;
+        3. Based on {milk_patterns}, analyze her long-term milk drinking behavior;
+        4. Based on {daiper_patterns}, analyzer her long-term daiper behavior;
+        5. Based on {sleep_patterns}, analyze her long-term sleep behavior;
+        """
+        if len(user_query) == 0
+        else f"Based on 施舒米's behavior patterns {patterns}, please answer user's initial query;"
+    ),
+    "----------",
+    # user context prompt.
+    f"""
+    Use the following user profile to personalize the output.
+    Write in Chinese. If a day hasn't finished yet, only use that date's data for prediction, but not for summarization.
+    The default timezone is PST, but if the timezone changes, please consider jet lag impact when analyzing, and provide suggestioins accordingly.
+    """,
         ]
 
         # Call Gemini (Non-streaming for simpler UI display)

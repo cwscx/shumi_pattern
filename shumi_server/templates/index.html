@@ -30,6 +30,11 @@
                 <div class="input-group">
                     <label>情报发生日期</label>
                     <input type="date" id="currentDate" value="{{ current_pst_date }}">
+                    <label>发生时区 (Timezone)</label>
+                    <select id="timezoneSelect" class="form-select">
+                    <option value="PST" selected>🇺🇸 加州 (PST/PDT)</option>
+                    <option value="CST">🇨🇳 中国 (CST)</option>
+                    </select>
                 </div>
 
                 <div class="btn-grid">
