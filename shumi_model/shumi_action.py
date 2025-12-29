@@ -1,5 +1,8 @@
+import datetime
 from enum import Enum
 from typing import Optional
+
+BIRTHDAY = datetime.date(2025, 9, 6)
 
 
 class Action(Enum):
@@ -22,36 +25,59 @@ class DaiperType(Enum):
 
 
 class ShumiAction:
-    day: int
-    day_time_hour: int
-    day_time_minute: int
+
+    # Member variables.
+    days: int
+    date_time: datetime.datetime
     action: Action
+    milk_amount: Optional[int] = None
     milk_type: Optional[MilkType] = None
-    milk_amount: Optional[float] = None
-    sleep_duration: Optional[int] = None
     daiper_type: Optional[DaiperType] = None
+    sleep_duration_min: Optional[int] = None
 
     def __init__(
         self,
         action: Action,
-        day: int,
-        day_time_hour: int,
-        day_time_minute: int,
+        days: int,
+        time: datetime.time,
         milk_type: Optional[MilkType] = None,
-        milk_amount: Optional[float] = None,
-        sleep_duration: Optional[int] = None,
+        milk_amount: Optional[int] = None,
+        sleep_duration_min: Optional[int] = None,
         daiper_type: Optional[DaiperType] = None,
     ):
         self.action = action
-        self.MilkType = MilkType
         self.milk_amount = milk_amount
-        self.sleep_duration = sleep_duration
-        self.DaiperType = DaiperType
-        self.day = day
-        self.day_time_hour = day_time_hour
-        self.day_time_minute = day_time_minute
+        self.milk_type = milk_type
+        self.daiper_type = daiper_type
+        self.sleep_duration_min = sleep_duration_min
+        self.days = days
+        date = BIRTHDAY + datetime.timedelta(days=days)
+        self.date_time = datetime.datetime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
+        )
+
+    # String representation of the ShumiAction for easy debugging.
+    def __str__(self) -> str:
+        time_str = f"Day {self.days} on {self.date_time.date()}, Time {self.date_time.hour:02d}:{self.date_time.minute:02d}"
+        if self.action == Action.DRINK_MILK:
+            # Special case for breast feed to show amount in minutes.
+            if self.milk_type is MilkType.BREAST_FEED:
+                return f"{time_str}, Action: Drink Milk, Type: {self.milk_type}, Amount: {self.milk_amount} minutes"
+            else:
+                return f"{time_str}, Action: Drink Milk, Type: {self.milk_type}, Amount: {self.milk_amount} ml"
+        elif self.action == Action.SLEEP:
+            return f"{time_str}, Action: Sleep, Duration: {self.sleep_duration_min} minutes"
+        elif self.action == Action.CHANGE_DAIPER:
+            return f"{time_str}, Action: Change Daiper, Type: {self.daiper_type}"
+        else:
+            return "Unknown Action"
 
 
+# Gets the Action enum from action string.
 def getAction(action: str) -> Action:
     if action == "喝奶":
         return Action.DRINK_MILK
@@ -60,9 +86,13 @@ def getAction(action: str) -> Action:
     elif action == "换尿布":
         return Action.CHANGE_DAIPER
     else:
-        raise Exception("Unknown Action")
+        raise Exception(f"Unknown Action {action}")
 
 
+1
+
+
+# Gets the MilkType enum from milk type string.
 def getMilkType(milk_type: str) -> MilkType:
     if milk_type == "配方奶":
         return MilkType.BOTTLE_FORMULA_MILK
@@ -71,9 +101,10 @@ def getMilkType(milk_type: str) -> MilkType:
     elif milk_type == "亲喂母乳":
         return MilkType.BREAST_FEED
     else:
-        raise Exception("Unknown Milk Type")
+        raise Exception(f"Unknown Milk Type {milk_type}")
 
 
+# Gets the DaiperType enum from daiper type string.
 def getDaiperType(daiper_type: str) -> DaiperType:
     if daiper_type == "嘘嘘":
         return DaiperType.PEE
@@ -84,4 +115,25 @@ def getDaiperType(daiper_type: str) -> DaiperType:
     elif daiper_type == "干爽":
         return DaiperType.CLEAN
     else:
-        raise Exception("Unknown Daiper Type")
+        raise Exception(f"Unknown Daiper Type {daiper_type}")
+
+
+# Gets time object from time string.
+def getTime(time_str: str) -> datetime.time:
+    time_parts = time_str.split(":")
+    return datetime.time(
+        int(time_parts[0]),
+        int(time_parts[1]),
+    )
+
+
+# Gets datetime object from days and time.
+def getDateTime(days: int, time: datetime.time) -> datetime.datetime:
+    date = BIRTHDAY + datetime.timedelta(days=days)
+    return datetime.datetime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+    )
