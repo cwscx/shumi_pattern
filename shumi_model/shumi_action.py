@@ -29,6 +29,7 @@ class ShumiAction:
     # Member variables.
     days: int
     date_time: datetime.datetime
+    since_prev_action_duration: datetime.timedelta
     action: Action
     milk_amount: Optional[int] = None
     milk_type: Optional[MilkType] = None
@@ -40,6 +41,7 @@ class ShumiAction:
         action: Action,
         days: int,
         time: datetime.time,
+        prev_action: Optional["ShumiAction"] = None,
         milk_type: Optional[MilkType] = None,
         milk_amount: Optional[int] = None,
         sleep_duration_min: Optional[int] = None,
@@ -60,9 +62,19 @@ class ShumiAction:
             time.minute,
         )
 
+        if prev_action is None:
+            self.since_prev_action_duration = datetime.timedelta(0)
+        elif prev_action.sleep_duration_min is None:
+            self.since_prev_action_duration = self.date_time - prev_action.date_time
+        else:
+            prev_action_end_datetime = prev_action.date_time + datetime.timedelta(
+                minutes=prev_action.sleep_duration_min
+            )
+            self.since_prev_action_duration = self.date_time - prev_action_end_datetime
+
     # String representation of the ShumiAction for easy debugging.
     def __str__(self) -> str:
-        time_str = f"Day {self.days} on {self.date_time.date()}, Time {self.date_time.hour:02d}:{self.date_time.minute:02d}"
+        time_str = f"Day {self.days} on {self.date_time.date()}, Time {self.date_time.hour:02d}:{self.date_time.minute:02d}, {self.since_prev_action_duration} since last action"
         if self.action == Action.DRINK_MILK:
             # Special case for breast feed to show amount in minutes.
             if self.milk_type is MilkType.BREAST_FEED:

@@ -29,7 +29,10 @@ def getDevice() -> str:
 
 # Loads Shumi actions from the JSON file. Ordered by date and time in an ascending order.
 def getShumiActions() -> list[ShumiAction]:
-    with open("../shumi_server/shumi_server/shumi.json", "r") as file:
+    with open(
+        "../shumi_server/shumi_server/shumi.json",
+        "r",
+    ) as file:
         # Use json.load() to deserialize the file object into a Python dictionary
         shumi_data = json.load(file)
         shumi_patterns = shumi_data["patterns"]
@@ -45,6 +48,7 @@ def getShumiActions() -> list[ShumiAction]:
 
             for pattern_action in pattern["actions"]:
                 action = getAction(pattern_action["action"])
+                prev_action = shumi_actions[-1] if len(shumi_actions) > 0 else None
 
                 if action == Action.DRINK_MILK:
                     milk_type = getMilkType(pattern_action["type"])
@@ -56,6 +60,7 @@ def getShumiActions() -> list[ShumiAction]:
                         time,
                         milk_type=milk_type,
                         milk_amount=volume,
+                        prev_action=prev_action,
                     )
                     shumi_actions.append(shumi_action)
                 # Corner case where Shumi is sleeping and has no time_end.
@@ -70,6 +75,7 @@ def getShumiActions() -> list[ShumiAction]:
                         days,
                         time_start,
                         sleep_duration_min=int(duration.total_seconds() / 60),
+                        prev_action=prev_action,
                     )
                     shumi_actions.append(shumi_action)
                 elif action == Action.CHANGE_DAIPER:
@@ -80,16 +86,89 @@ def getShumiActions() -> list[ShumiAction]:
                         days,
                         time,
                         daiper_type=daiper_type,
+                        prev_action=prev_action,
                     )
                     shumi_actions.append(shumi_action)
         return shumi_actions
 
 
-def loadData(batch_size: int = 32):
+# Convert a ShumiAction to embedding tensor in shape [10].
+def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
+    action_type_embedding = nn.Embedding(1, 5)
+    milk_type_embedding = nn.Embedding(1, 3)
+    milk_amount_tensor = torch.tensor(
+        [shumi_action.milk_amount if shumi_action.milk_amount is not None else 0],
+        dtype=torch.float32,
+    )
+    daiper_type_embedding = nn.Embedding(1, 3)
+    sleep_duration_tensor = torch.tensor(
+        [
+            (
+                shumi_action.sleep_duration_min
+                if shumi_action.sleep_duration_min is not None
+                else 0
+            )
+        ],
+        dtype=torch.float32,
+    )
+    days_tensor = torch.tensor([shumi_action.days], dtype=torch.float32)
+    since_prev_action_duration_min_tensor = torch.tensor(
+        [shumi_action.since_prev_action_duration.total_seconds() / 60],
+        dtype=torch.float32,
+    )
+    time_hour_tensor = torch.tensor([shumi_action.date_time.hour], dtype=torch.float32)
+    time_minute_tensor = torch.tensor(
+        [shumi_action.date_time.minute], dtype=torch.float32
+    )
+
+    # tensor = torch.cat(
+    #     action_type_embedding,
+    #     milk_type_embedding,
+    #     milk_amount_tensor,
+    #     daiper_type_embedding,
+    #     sleep_duration_tensor,
+    #     days_tensor,
+    #     since_prev_action_duration_min_tensor,
+    #     time_hour_tensor,
+    #     time_minute_tensor,
+    # )
+
+    return torch.zeros(10)
+
+
+# Gets a batch of action embeddings for training and validation, in shape of [#, block_size, feature_size].
+# Where # is the number of data, feature size is the size of each action embedding returned by getActionEmbedding().
+def getActionEmbeddings(block_size: int = 32) -> tuple[torch.Tensor, torch.Tensor]:
     actions = getShumiActions()
-    for action in actions:
-        print(action)
-    print(len(actions))
+    actions_tensor = torch.stack([getActionEmbedding(action) for action in actions])
+
+    start_offsets = torch.randint(
+        high=len(actions) - block_size - 1, size=(len(actions) - block_size - 1,)
+    )
+    inputs = torch.stack(
+        [actions_tensor[start : start + block_size] for start in start_offsets]
+    )
+    outputs = torch.stack(
+        [actions_tensor[start + block_size + 1] for start in start_offsets]
+    )
+    return inputs, outputs
 
 
-loadData()
+# Gets training and validation data.
+def getData(
+    split: str = "train", block_size: int = 32
+) -> tuple[torch.Tensor, torch.Tensor]:
+    x, y = getActionEmbeddings(block_size)
+    n = int(len(x) * 0.8)
+
+    if split == "train":
+        return x[:n], y[:n]
+    else:
+        return x[n:], y[n:]
+    return train_data, val_data
+
+
+train_x, train_y = getData("train")
+test_x, test_y = getData("test")
+print(train_x.shape, train_y.shape)
+print(test_x.shape, test_y.shape)
