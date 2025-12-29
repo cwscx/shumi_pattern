@@ -121,19 +121,19 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
         [shumi_action.date_time.minute], dtype=torch.float32
     )
 
-    tensor = torch.cat(
-        action_type_embedding,
-        milk_type_embedding,
-        milk_amount_tensor,
-        daiper_type_embedding,
-        sleep_duration_tensor,
-        days_tensor,
-        since_prev_action_duration_min_tensor,
-        time_hour_tensor,
-        time_minute_tensor,
-    )
+    # tensor = torch.cat(
+    #     action_type_embedding,
+    #     milk_type_embedding,
+    #     milk_amount_tensor,
+    #     daiper_type_embedding,
+    #     sleep_duration_tensor,
+    #     days_tensor,
+    #     since_prev_action_duration_min_tensor,
+    #     time_hour_tensor,
+    #     time_minute_tensor,
+    # )
 
-    return tensor
+    return torch.zeros(10)
 
 
 # Gets a batch of action embeddings for training and validation, in shape of [#, block_size, feature_size].
