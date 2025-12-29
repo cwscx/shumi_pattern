@@ -92,11 +92,46 @@ def getShumiActions() -> list[ShumiAction]:
         return shumi_actions
 
 
-def loadData(batch_size: int = 32):
+# Convert a ShumiAction to embedding tensor in shape [10].
+def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
+    action_tensor = torch.zeros(10)
+
+    return action_tensor
+
+
+# Gets a batch of action embeddings for training and validation, in shape of [#, block_size, 10].
+# Where # is the number of data.
+def getActionEmbeddings(block_size: int = 32) -> tuple[torch.Tensor, torch.Tensor]:
     actions = getShumiActions()
-    for action in actions:
-        print(action)
-    print(len(actions))
+    actions_tensor = torch.stack([getActionEmbedding(action) for action in actions])
+
+    start_offsets = torch.randint(
+        high=len(actions) - block_size - 1, size=(len(actions) - block_size - 1,)
+    )
+    inputs = torch.stack(
+        [actions_tensor[start : start + block_size] for start in start_offsets]
+    )
+    outputs = torch.stack(
+        [actions_tensor[start + block_size + 1] for start in start_offsets]
+    )
+    return inputs, outputs
 
 
-loadData()
+# Gets training and validation data.
+def getData(
+    split: str = "train", block_size: int = 32
+) -> tuple[torch.Tensor, torch.Tensor]:
+    x, y = getActionEmbeddings(block_size)
+    n = int(len(x) * 0.8)
+
+    if split == "train":
+        return x[:n], y[:n]
+    else:
+        return x[n:], y[n:]
+    return train_data, val_data
+
+
+train_x, train_y = getData("train")
+test_x, test_y = getData("test")
+print(train_x.shape, train_y.shape)
+print(test_x.shape, test_y.shape)
