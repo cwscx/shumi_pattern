@@ -983,6 +983,53 @@
                     "type": "嘘嘘"
                 }
             ]
+        },
+        {
+            "date": "2025/12/29",
+            "actions": [
+                {
+                    "action": "喝奶",
+                    "time_start": "00:07",
+                    "type": "配方奶",
+                    "volume": "120ml"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "00:21",
+                    "time_end": "07:05"
+                },
+                {
+                    "action": "换尿布",
+                    "time_start": "07:13",
+                    "type": "嘘嘘"
+                },
+                {
+                    "action": "喝奶",
+                    "time_start": "07:36",
+                    "type": "配方奶",
+                    "volume": "130ml"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "08:49",
+                    "time_end": "09:55"
+                },
+                {
+                    "action": "换尿布",
+                    "time_start": "10:45",
+                    "type": "嘘嘘"
+                },
+                {
+                    "action": "喝奶",
+                    "time_start": "10:46",
+                    "type": "瓶喂母乳",
+                    "volume": "130ml"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "11:39"
+                }
+            ]
         }
     ]
 }
