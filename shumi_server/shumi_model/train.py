@@ -94,13 +94,50 @@ def getShumiActions() -> list[ShumiAction]:
 
 # Convert a ShumiAction to embedding tensor in shape [10].
 def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
-    action_tensor = torch.zeros(10)
+    action_type_embedding = nn.Embedding(1, 5)
+    milk_type_embedding = nn.Embedding(1, 3)
+    milk_amount_tensor = torch.tensor(
+        [shumi_action.milk_amount if shumi_action.milk_amount is not None else 0],
+        dtype=torch.float32,
+    )
+    daiper_type_embedding = nn.Embedding(1, 3)
+    sleep_duration_tensor = torch.tensor(
+        [
+            (
+                shumi_action.sleep_duration_min
+                if shumi_action.sleep_duration_min is not None
+                else 0
+            )
+        ],
+        dtype=torch.float32,
+    )
+    days_tensor = torch.tensor([shumi_action.days], dtype=torch.float32)
+    since_prev_action_duration_min_tensor = torch.tensor(
+        [shumi_action.since_prev_action_duration.total_seconds() / 60],
+        dtype=torch.float32,
+    )
+    time_hour_tensor = torch.tensor([shumi_action.date_time.hour], dtype=torch.float32)
+    time_minute_tensor = torch.tensor(
+        [shumi_action.date_time.minute], dtype=torch.float32
+    )
 
-    return action_tensor
+    tensor = torch.cat(
+        action_type_embedding,
+        milk_type_embedding,
+        milk_amount_tensor,
+        daiper_type_embedding,
+        sleep_duration_tensor,
+        days_tensor,
+        since_prev_action_duration_min_tensor,
+        time_hour_tensor,
+        time_minute_tensor,
+    )
+
+    return tensor
 
 
-# Gets a batch of action embeddings for training and validation, in shape of [#, block_size, 10].
-# Where # is the number of data.
+# Gets a batch of action embeddings for training and validation, in shape of [#, block_size, feature_size].
+# Where # is the number of data, feature size is the size of each action embedding returned by getActionEmbedding().
 def getActionEmbeddings(block_size: int = 32) -> tuple[torch.Tensor, torch.Tensor]:
     actions = getShumiActions()
     actions_tensor = torch.stack([getActionEmbedding(action) for action in actions])
