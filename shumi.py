@@ -8,7 +8,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Open the file in read mode ('r')
-with open("shumi.json", "r") as file:
+with open("shumi_server/shumi_server/shumi.json", "r") as file:
     # Use json.load() to deserialize the file object into a Python dictionary
     shumi_pattern = json.load(file)
 
@@ -63,7 +63,11 @@ def getTimePatterns():
     ]
 
 
-basic_info = shumi_pattern["info"]
+basic_info = {
+    "name": shumi_pattern["name"],
+    "birthday": shumi_pattern["birthday"],
+    "sex": shumi_pattern["sex"],
+}
 patterns = shumi_pattern["patterns"]
 milk_patterns = getPatterns("喝奶")
 daiper_patterns = getPatterns("换尿布")
