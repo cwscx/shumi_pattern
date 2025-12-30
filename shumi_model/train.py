@@ -366,15 +366,18 @@ class ShumiPatternModel(nn.Module):
             Block(head_num, embedding_size),
         )
         self.action_type_head = self.head(embedding_size, 3)
+        self.sleep_duration_head = self.head(embedding_size, 1)
 
     def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         embedding = self.proj(x)
         embedding = self.blocks(embedding)
         embedding = self.ln1(embedding)
         action_outputs = self.action_type_head(embedding)
+        sleep_duration_outputs = self.sleep_duration_head(embedding)
 
         return {
             "action_type": action_outputs,
+            "sleep_duration": sleep_duration_outputs,
         }
 
     def head(self, input_dim: int, output_dim: int) -> nn.Sequential:
@@ -394,12 +397,18 @@ cross_entropy_loss = nn.CrossEntropyLoss()
 
 @torch.no_grad()
 def estimate_loss() -> dict[str, float]:
-    out = {}
+    out = {
+        "train": {},
+        "val": {},
+    }
     model.eval()
     outputs = None
     yb = None
     for split in ["train", "val"]:
-        losses = torch.zeros(10)
+        losses = {
+            "action": torch.zeros(10),
+            "sleep_duration": torch.zeros(10),
+        }
         for k in range(10):
             xb, yb = getBatchData(split, batch_size=batch_size)
             xb = xb.to(device)
@@ -409,10 +418,20 @@ def estimate_loss() -> dict[str, float]:
                 outputs["action_type"].view(-1, 3),
                 yb[:, :, 0:3].argmax(dim=-1).view(-1),
             )
-            losses[k] += action_loss.item()
-        out[split] = losses.mean().item()
+            losses["action"][k] += action_loss.item()
+            sleep_duration_loss = mse_loss(
+                outputs["sleep_duration"].view(-1),
+                yb[:, :, 11].view(-1),
+            )
+            losses["sleep_duration"][k] += sleep_duration_loss.item()
+
+        out[split]["action"] = losses["action"].mean().item()
+        out[split]["sleep_duration"] = losses["sleep_duration"].mean().item()
     model.train()
-    print(f"Step {iter}: train loss {out['train']:.4f}, val loss {out['val']:.4f}")
+    for k1, v1 in out.items():
+        print(f"Step {iter}: {k1} loss:")
+        for k2, v2 in v1.items():
+            print(f"  - {k2}: {v2:.4f}")
     return out
 
 
@@ -425,9 +444,14 @@ for iter in range(5000):
     yb = yb.to(device)
     optimizer.zero_grad(set_to_none=True)
     outputs = model(xb)
-    loss = cross_entropy_loss(
+    action_loss = cross_entropy_loss(
         outputs["action_type"].view(-1, 3), yb[:, :, 0:3].argmax(dim=-1).view(-1)
     )
+    sleep_duration_loss = mse_loss(
+        outputs["sleep_duration"].view(-1),
+        yb[:, :, 11].view(-1),
+    )
+    loss = action_loss + sleep_duration_loss
     loss.backward()
     optimizer.step()
 
@@ -453,3 +477,5 @@ with torch.no_grad():
     action_type_val = torch.argmax(action_probs).item() + 1
     action = Action(action_type_val)
     print(f"Predicted next action: {action}, probabilities: {action_probs}")
+    sleep_duration = round(output["sleep_duration"][:, -1, :].item())
+    print(f"Predicted sleep duration (minutes): {sleep_duration}")
