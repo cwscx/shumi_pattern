@@ -460,7 +460,7 @@ def estimate_loss() -> dict[str, float]:
 train_time_start = datetime.datetime.now()
 train_time_prev = train_time_start
 
-for iter in range(5000):
+for iter in range(10000):
     xb, yb = getBatchData("train", batch_size=batch_size)
     xb = xb.to(device)
     yb = yb.to(device)
@@ -518,6 +518,7 @@ for iter in range(5000):
             f"Elapsed time for last 1000 iters: {elapsed}, total elapsed time: {total_elapsed}"
         )
 
+# Predict the next action based on the last block_size actions to evaluate.
 with torch.no_grad():
     actions = getShumiActions()[-block_size - 10 : -10]
     last_actions = (
@@ -556,3 +557,6 @@ with torch.no_grad():
     time_hour = round(output["time_hour"][:, -1, :].item())
     time_minute = round(output["time_minute"][:, -1, :].item())
     print(f"Predicted time: {time_hour:02d}:{time_minute:02d}")
+
+# Save model.
+torch.save(model.state_dict(), "shumi_pattern_model.pth")
