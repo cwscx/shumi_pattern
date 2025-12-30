@@ -42,6 +42,7 @@ class ShumiAction:
         days: int,
         time: datetime.time,
         prev_action: Optional["ShumiAction"] = None,
+        since_prev_action_duration: Optional[datetime.timedelta] = None,
         milk_type: Optional[MilkType] = None,
         milk_amount: Optional[int] = None,
         sleep_duration_min: Optional[int] = None,
@@ -62,7 +63,9 @@ class ShumiAction:
             time.minute,
         )
 
-        if prev_action is None:
+        if since_prev_action_duration is not None:
+            self.since_prev_action_duration = since_prev_action_duration
+        elif prev_action is None:
             self.since_prev_action_duration = datetime.timedelta(0)
         elif prev_action.sleep_duration_min is None:
             self.since_prev_action_duration = self.date_time - prev_action.date_time
@@ -99,9 +102,6 @@ def getAction(action: str) -> Action:
         return Action.CHANGE_DAIPER
     else:
         raise Exception(f"Unknown Action {action}")
-
-
-1
 
 
 # Gets the MilkType enum from milk type string.

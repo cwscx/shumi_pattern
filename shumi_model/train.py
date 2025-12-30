@@ -9,6 +9,7 @@ from shumi_action import (
     ShumiAction,
     MilkType,
     DaiperType,
+    BIRTHDAY,
     getAction,
     getDaiperType,
     getDateTime,
@@ -155,6 +156,53 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
     return tensor
 
 
+# Convert an action embedding tensor in shape [8] back to ShumiAction.
+def getShumiAction(action_tensor: torch.Tensor) -> ShumiAction:
+    action_type_val = action_tensor[0].item()
+    action = Action(min(max(round(action_type_val), 1), 3))
+    milk_type = None
+    milk_amount = None
+    daiper_type = None
+    days = datetime.datetime.now().date() - BIRTHDAY
+
+    since_prev_action_duration_min = datetime.timedelta(
+        minutes=round(action_tensor[5].item())
+    )
+    time_hour = round(action_tensor[6].item())
+    time_minute = round(action_tensor[7].item())
+
+    if action == Action.DRINK_MILK:
+        milk_type = MilkType(min(max(round(action_tensor[1].item()), 1), 3))
+        milk_amount = max(round(action_tensor[2].item()), 0)
+        return ShumiAction(
+            action,
+            days=days.days,
+            time=datetime.time(time_hour, time_minute),
+            milk_type=milk_type,
+            milk_amount=milk_amount,
+            since_prev_action_duration=since_prev_action_duration_min,
+        )
+    elif action == Action.SLEEP:
+        sleep_duration_min = max(round(action_tensor[4].item()), 0)
+        return ShumiAction(
+            action,
+            days=days.days,
+            time=datetime.time(time_hour, time_minute),
+            sleep_duration_min=sleep_duration_min,
+            since_prev_action_duration=since_prev_action_duration_min,
+        )
+    elif action == Action.CHANGE_DAIPER:
+        daiper_type = DaiperType(min(max(round(action_tensor[3].item()), 1), 4))
+        return ShumiAction(
+            action,
+            days=days.days,
+            time=datetime.time(time_hour, time_minute),
+            daiper_type=daiper_type,
+            since_prev_action_duration=since_prev_action_duration_min,
+        )
+    raise ValueError("Invalid action type")
+
+
 # Gets a batch of action embeddings for training and validation, in shape of [#, block_size, feature_size].
 # Where # is the number of data, feature size is the size of each action embedding returned by getActionEmbedding().
 def getActionEmbeddings(block_size: int = 16) -> tuple[torch.Tensor, torch.Tensor]:
@@ -267,11 +315,10 @@ def estimate_loss() -> dict[str, float]:
         out[split] = losses.mean().item()
     model.train()
     print(f"Step {iter}: train loss {out['train']:.4f}, val loss {out['val']:.4f}")
-    print(f"{outputs[0]}, {yb[0]}")
     return out
 
 
-for iter in range(50000):
+for iter in range(10000):
     xb, yb = getBatchData("train", batch_size=32)
     xb = xb.to(device)
     yb = yb.to(device)
@@ -283,3 +330,14 @@ for iter in range(50000):
 
     if iter % 1000 == 0:
         estimate_loss()
+
+with torch.no_grad():
+    actions = getShumiActions()[-16:]
+    last_actions = (
+        torch.stack([getActionEmbedding(action) for action in actions])
+        .expand(32, 16, 8)
+        .to(device)
+    )
+    output = model(last_actions)
+    predicted_next_action = getShumiAction(output.mean(dim=0))
+    print(f"Predicted next action: {predicted_next_action}")
