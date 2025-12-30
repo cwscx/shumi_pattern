@@ -1,4 +1,5 @@
 import datetime
+import os
 import torch
 import torch.nn.functional as F
 from device import getDevice
@@ -9,7 +10,9 @@ block_size = 32
 device = getDevice()
 
 model = ShumiPatternModel()
-model.load_state_dict(torch.load("shumi_pattern_model.pth"))
+model.load_state_dict(
+    torch.load(os.path.dirname(__file__) + "/shumi_pattern_model.pth")
+)
 model.to(device)
 
 
