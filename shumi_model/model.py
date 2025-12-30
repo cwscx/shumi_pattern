@@ -16,12 +16,6 @@ from shumi_action import (
     getTime,
 )
 
-head_num = 4
-input_num = 18
-embedding_num = 128
-block_size = 32
-batch_size = 32
-
 
 # Loads Shumi actions from the JSON file. Ordered by date and time in an ascending order.
 def getShumiActions() -> list[ShumiAction]:
@@ -156,9 +150,7 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
 
 # Gets a batch of action embeddings for training and validation, in shape of [#, block_size, feature_size].
 # Where # is the number of data, feature size is the size of each action embedding returned by getActionEmbedding().
-def getActionEmbeddings(
-    block_size: int = block_size,
-) -> tuple[torch.Tensor, torch.Tensor]:
+def getActionEmbeddings(block_size: int) -> tuple[torch.Tensor, torch.Tensor]:
     actions = getShumiActions()
     actions_tensor = torch.stack([getActionEmbedding(action) for action in actions])
 
@@ -198,7 +190,7 @@ def getActionEmbeddings(
 
 # Gets training and validation data.
 def getData(
-    block_size: int = block_size,
+    block_size: int,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     x, y = getActionEmbeddings(block_size)
     n = int(len(x) * 0.8)
@@ -206,7 +198,13 @@ def getData(
     return x[:n], y[:n], x[n:], y[n:]
 
 
-train_x, train_y, test_x, test_y = getData()
+head_num = 4
+embedding_size = 128
+block_size = 32
+batch_size = 32
+dropout_rate = 0.1
+train_x, train_y, test_x, test_y = getData(block_size)
+input_size = train_x.shape[2]
 
 
 # Gets a batch of data for training or validation in one run.
@@ -222,19 +220,19 @@ def getBatchData(
 
 
 class Head(nn.Module):
-    def __init__(self, head_size: int, embedding_num: int = embedding_num):
+    def __init__(self, head_size: int, embedding_size: int = embedding_size):
         super().__init__()
-        self.key = nn.Linear(embedding_num, head_size, bias=False)
-        self.query = nn.Linear(embedding_num, head_size, bias=False)
-        self.value = nn.Linear(embedding_num, head_size, bias=False)
+        self.key = nn.Linear(embedding_size, head_size, bias=False)
+        self.query = nn.Linear(embedding_size, head_size, bias=False)
+        self.value = nn.Linear(embedding_size, head_size, bias=False)
         self.register_buffer("tril", torch.tril(torch.ones(block_size, block_size)))
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, T, C = x.shape
         k = self.key(x)
         q = self.query(x)
-        weights = q @ k.transpose(-2, -1) * (embedding_num**-0.5)
+        weights = q @ k.transpose(-2, -1) * (embedding_size**-0.5)
         weights = weights.masked_fill(self.tril[:T, :T] == 0, float("-inf"))
         weights = F.softmax(weights, dim=-1)
         weights = self.dropout(weights)
@@ -248,8 +246,8 @@ class MultiHeadAttention(nn.Module):
         self.heads = nn.ModuleList(
             [Head(head_size, num_heads * head_size) for _ in range(num_heads)]
         )
-        self.proj = nn.Linear(num_heads * head_size, embedding_num)
-        self.dropout = nn.Dropout(0.1)
+        self.proj = nn.Linear(num_heads * head_size, embedding_size)
+        self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = torch.cat([h(x) for h in self.heads], dim=-1)
@@ -258,14 +256,14 @@ class MultiHeadAttention(nn.Module):
 
 
 class FeedForwardNN(nn.Module):
-    def __init__(self, embedding_size: int = embedding_num):
+    def __init__(self, embedding_size: int = embedding_size):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(embedding_size, 4 * embedding_size),
             nn.ReLU(),
             nn.Linear(4 * embedding_size, embedding_size),
             nn.ReLU(),
-            nn.Dropout(0.1),
+            nn.Dropout(dropout_rate),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -276,7 +274,7 @@ class Block(nn.Module):
     def __init__(
         self,
         head_num: int = head_num,
-        embedding_size: int = embedding_num,
+        embedding_size: int = embedding_size,
     ):
         super().__init__()
         self.multi_head = MultiHeadAttention(head_num, embedding_size // head_num)
@@ -293,8 +291,8 @@ class Block(nn.Module):
 class ShumiPatternModel(nn.Module):
     def __init__(
         self,
-        input_size: int = input_num,
-        embedding_size: int = embedding_num,
+        input_size: int = input_size,
+        embedding_size: int = embedding_size,
     ):
         super().__init__()
         self.proj = nn.Linear(input_size, embedding_size)

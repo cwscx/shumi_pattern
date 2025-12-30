@@ -6,8 +6,10 @@ from device import getDevice
 
 
 device = getDevice()
-batch_size = 32
 print(f"Using device: {device}")
+
+batch_size = 32
+iterations = 5000
 
 model = ShumiPatternModel()
 model = model.to(device)
@@ -105,7 +107,7 @@ def estimate_loss() -> dict[str, float]:
 train_time_start = datetime.datetime.now()
 train_time_prev = train_time_start
 
-for iter in range(10000):
+for iter in range(iterations):
     xb, yb = getBatchData("train", batch_size=batch_size)
     xb = xb.to(device)
     yb = yb.to(device)
