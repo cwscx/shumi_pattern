@@ -34,8 +34,6 @@ def predict_next_actions(
             action_probs = F.softmax(output["action_type"][:, -1, :], dim=-1)
             action_type_val = torch.argmax(action_probs).item()
             action = Action(action_type_val)
-            if action == Action.UNKNOWN_ACTION:
-                continue
             action_prob = round(
                 action_probs.squeeze()[torch.argmax(action_probs)].item(), 4
             )
@@ -44,8 +42,10 @@ def predict_next_actions(
             since_prev_action_duration = round(
                 output["since_prev_action_duration"][:, -1, :].item()
             )
-            if since_prev_action_duration < 0:
+
+            if action == Action.UNKNOWN_ACTION or since_prev_action_duration < 0:
                 continue
+
             last_event = actions[-1]
             last_event_datetime = datetime.datetime(
                 year=last_event.date_time.year,
@@ -68,8 +68,10 @@ def predict_next_actions(
 
             if action == Action.SLEEP:
                 sleep_duration = round(output["sleep_duration"][:, -1, :].item())
+
                 if sleep_duration < 0:
                     continue
+
                 predicted_action = ShumiAction(
                     action=action,
                     days=days,
@@ -85,15 +87,13 @@ def predict_next_actions(
                 milk_type_probs = F.softmax(output["milk_type"][:, -1, :], dim=-1)
                 milk_type_val = torch.argmax(milk_type_probs).item()
                 milk_type = MilkType(milk_type_val)
-                if milk_type == MilkType.UNKNOWN_ACTION:
-                    continue
                 milk_type_prob = round(
                     milk_type_probs.squeeze()[torch.argmax(milk_type_probs)].item(), 4
                 )
                 probs["milk_type"] = milk_type_prob
-
                 milk_amount = round(output["milk_amount"][:, -1, :].item())
-                if milk_amount < 0:
+
+                if milk_type == MilkType.UNKNOWN_ACTION or milk_amount < 0:
                     continue
 
                 predicted_action = ShumiAction(
@@ -112,8 +112,10 @@ def predict_next_actions(
                 daiper_type_probs = F.softmax(output["daiper_type"][:, -1, :], dim=-1)
                 daiper_type_val = torch.argmax(daiper_type_probs).item()
                 daiper_type = DaiperType(daiper_type_val)
+
                 if daiper_type == DaiperType.UNKNOWN_DAIPER_TYPE:
                     continue
+
                 daiper_type_prob = round(
                     daiper_type_probs.squeeze()[torch.argmax(daiper_type_probs)].item(),
                     4,
