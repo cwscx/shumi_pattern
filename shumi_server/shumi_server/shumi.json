@@ -68,9 +68,8 @@
                 {
                     "action": "喝奶",
                     "type": "亲喂母乳",
-                    "volume": "8分钟",
-                    "time_start": "16:17",
-                    "time_end": "16:27"
+                    "volume": "70ml",
+                    "time_start": "16:49"
                 },
                 {
                     "action": "喝奶",
@@ -1063,6 +1062,12 @@
                     "type": "臭臭"
                 },
                 {
+                    "action": "喝奶",
+                    "time_start": "17:02",
+                    "type": "瓶喂母乳",
+                    "volume": "30ml"
+                },
+                {
                     "action": "睡眠",
                     "time_start": "18:00",
                     "time_end": "18:58"
@@ -1071,12 +1076,6 @@
                     "action": "换尿布",
                     "time_start": "19:28",
                     "type": "嘘嘘"
-                },
-                {
-                    "action": "喝奶",
-                    "time_start": "17:02",
-                    "type": "瓶喂母乳",
-                    "volume": "30ml"
                 },
                 {
                     "action": "换尿布",
@@ -1121,6 +1120,12 @@
                     "type": "嘘嘘"
                 },
                 {
+                    "action": "喝奶",
+                    "time_start": "07:36",
+                    "type": "配方奶",
+                    "volume": "130ml"
+                },
+                {
                     "action": "睡眠",
                     "time_start": "08:35",
                     "time_end": "09:15"
@@ -1155,12 +1160,6 @@
                 {
                     "action": "睡眠",
                     "time_start": "14:30"
-                },
-                {
-                    "action": "喝奶",
-                    "time_start": "07:36",
-                    "type": "配方奶",
-                    "volume": "130ml"
                 }
             ]
         }

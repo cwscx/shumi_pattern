@@ -1,4 +1,5 @@
 import datetime
+import os
 import torch
 import torch.nn as nn
 from model import ShumiPatternModel, getBatchData
@@ -9,7 +10,7 @@ device = getDevice()
 print(f"Using device: {device}")
 
 batch_size = 32
-iterations = 5000
+iterations = 10000
 
 model = ShumiPatternModel()
 model = model.to(device)
@@ -19,7 +20,7 @@ cross_entropy_loss = nn.CrossEntropyLoss()
 
 
 @torch.no_grad()
-def estimate_loss() -> dict[str, float]:
+def estimate_loss() -> list[str]:
     out = {
         "train": {},
         "val": {},
@@ -97,16 +98,21 @@ def estimate_loss() -> dict[str, float]:
         out[split]["time_hour"] = losses["time_hour"].mean().item()
         out[split]["time_minute"] = losses["time_minute"].mean().item()
     model.train()
+
+    losses = []
     for k1, v1 in out.items():
-        print(f"Step {iter}: {k1} loss:")
+        losses.append(f"Step {iter}: {k1} loss:")
+        print(losses[-1])
         for k2, v2 in v1.items():
-            print(f"  - {k2}: {v2:.4f}")
-    return out
+            losses.append(f"  - {k2}: {v2:.4f}")
+            print(losses[-1])
+    return losses
 
 
 train_time_start = datetime.datetime.now()
 train_time_prev = train_time_start
 
+model_release_notes = []
 for iter in range(iterations):
     xb, yb = getBatchData("train", batch_size=batch_size)
     xb = xb.to(device)
@@ -156,15 +162,23 @@ for iter in range(iterations):
     optimizer.step()
 
     if iter % 1000 == 0:
-        estimate_loss()
+        losses = estimate_loss()
         train_time_now = datetime.datetime.now()
         elapsed = train_time_now - train_time_prev
         total_elapsed = train_time_now - train_time_start
         train_time_prev = train_time_now
-        print(
+
+        losses.append(
             f"Elapsed time for last 1000 iters: {elapsed}, total elapsed time: {total_elapsed}"
         )
-
+        print(losses[-1])
+        model_release_notes = losses
 
 # Save model.
-torch.save(model.state_dict(), "shumi_pattern_model.pth")
+torch.save(model.state_dict(), os.path.dirname(__file__) + "/shumi_pattern_model.pth")
+
+# Save model update history.
+with open(os.path.dirname(__file__) + "/shumi_pattern_model_history.txt", "a") as file:
+    file.write(f"\nSaved model at {datetime.datetime.now()}\n\n")
+    file.write("\n".join(model_release_notes))
+    file.write("\n==================================\n")

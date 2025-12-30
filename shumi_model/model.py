@@ -80,6 +80,17 @@ def getShumiActions() -> list[ShumiAction]:
                         prev_action=prev_action,
                     )
                     shumi_actions.append(shumi_action)
+        # In case the actions are not sorted by time. For sleep, adds the sleep duration instead.
+        shumi_actions.sort(
+            key=lambda action: action.date_time
+            + datetime.timedelta(
+                minutes=(
+                    action.sleep_duration_min
+                    if action.sleep_duration_min is not None
+                    else 0
+                )
+            )
+        )
         return shumi_actions
 
 

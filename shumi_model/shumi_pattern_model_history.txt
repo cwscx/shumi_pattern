@@ -1,0 +1,23 @@
+
+Saved model at 2025-12-30 15:54:28.793008
+
+Step 9000: train loss:
+  - action: 0.0000
+  - milk: 0.0000
+  - milk_amount: 0.5237
+  - daiper: 0.0000
+  - sleep_duration: 0.5439
+  - since_prev_action_duration: 0.4856
+  - time_hour: 0.2601
+  - time_minute: 0.5063
+Step 9000: val loss:
+  - action: 0.0049
+  - milk: 0.0008
+  - milk_amount: 0.6872
+  - daiper: 0.0040
+  - sleep_duration: 0.5765
+  - since_prev_action_duration: 0.5136
+  - time_hour: 0.2652
+  - time_minute: 0.6167
+Elapsed time for last 1000 iters: 0:00:15.685984, total elapsed time: 0:02:21.418117
+==================================
