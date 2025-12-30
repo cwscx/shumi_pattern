@@ -392,6 +392,7 @@ model = ShumiPatternModel()
 model = model.to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 mse_loss = nn.MSELoss()
+l1_loss = nn.L1Loss()
 cross_entropy_loss = nn.CrossEntropyLoss()
 
 
@@ -419,7 +420,7 @@ def estimate_loss() -> dict[str, float]:
                 yb[:, :, 0:3].argmax(dim=-1).view(-1),
             )
             losses["action"][k] += action_loss.item()
-            sleep_duration_loss = mse_loss(
+            sleep_duration_loss = l1_loss(
                 outputs["sleep_duration"].view(-1),
                 yb[:, :, 11].view(-1),
             )
@@ -447,11 +448,11 @@ for iter in range(5000):
     action_loss = cross_entropy_loss(
         outputs["action_type"].view(-1, 3), yb[:, :, 0:3].argmax(dim=-1).view(-1)
     )
-    sleep_duration_loss = mse_loss(
+    sleep_duration_loss = l1_loss(
         outputs["sleep_duration"].view(-1),
         yb[:, :, 11].view(-1),
     )
-    loss = action_loss + sleep_duration_loss
+    loss = action_loss + 0.6 * sleep_duration_loss
     loss.backward()
     optimizer.step()
 
