@@ -6,18 +6,21 @@ BIRTHDAY = datetime.date(2025, 9, 6)
 
 
 class Action(Enum):
+    UNKNOWN_ACTION = 0
     DRINK_MILK = 1
     SLEEP = 2
     CHANGE_DAIPER = 3
 
 
 class MilkType(Enum):
+    UNKNOWN_ACTION = 0
     BOTTLE_BREAST_MILK = 1
     BOTTLE_FORMULA_MILK = 2
     BREAST_FEED = 3
 
 
 class DaiperType(Enum):
+    UNKNOWN_DAIPER_TYPE = 0
     PEE = 1
     POO = 2
     PEE_AND_POO = 3

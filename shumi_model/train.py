@@ -30,9 +30,9 @@ def getDevice() -> str:
 
 device = getDevice()
 head_num = 4
-input_num = 15
+input_num = 18
 embedding_num = 128
-block_size = 16
+block_size = 32
 batch_size = 32
 print(f"Using device: {device}")
 
@@ -103,21 +103,21 @@ def getShumiActions() -> list[ShumiAction]:
 
 
 def one_hot(enum_val: int, num_classes: int):
-    if enum_val <= 0 or enum_val > num_classes:
+    if enum_val < 0 or enum_val >= num_classes:
         return torch.zeros(num_classes).float()
-    return F.one_hot(torch.tensor(enum_val) - 1, num_classes=num_classes).float()
+    return F.one_hot(torch.tensor(enum_val), num_classes=num_classes).float()
 
 
-# Convert a ShumiAction to embedding tensor in shape [15].
+# Convert a ShumiAction to embedding tensor in shape [18].
 # The features are:
-#   - Action Type (float, 3)
-#   - Milk Type (float, 3)
-#   - Milk Amount (float, 1)
-#   - Daiper Type (float, 4)
-#   - Sleep Duration in minutes (float, 1)
-#   - Since Previous Action Duration in minutes (float, 1)
-#   - Time Hour (float, 1)
-#   - Time Minute (float, 1)
+#   - Action Type (float, 4) [0:4]
+#   - Milk Type (float, 4) [4:8]
+#   - Milk Amount (float, 1) [8]
+#   - Daiper Type (float, 5) [9:14]
+#   - Sleep Duration in minutes (float, 1) [14]
+#   - Since Previous Action Duration in minutes (float, 1) [15]
+#   - Time Hour (float, 1) [16]
+#   - Time Minute (float, 1) [17]
 def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
     action_type_tensor = one_hot(shumi_action.action.value, len(Action))
     milk_type_tensor = one_hot(
@@ -166,53 +166,6 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
     )
 
     return tensor
-
-
-# Convert an action embedding tensor in shape [8] back to ShumiAction.
-def getShumiAction(action_tensor: torch.Tensor) -> ShumiAction:
-    action_type_val = action_tensor[0].item()
-    action = Action(min(max(round(action_type_val), 1), 3))
-    milk_type = None
-    milk_amount = None
-    daiper_type = None
-    days = datetime.datetime.now().date() - BIRTHDAY
-
-    since_prev_action_duration_min = datetime.timedelta(
-        minutes=round(action_tensor[5].item())
-    )
-    time_hour = round(action_tensor[6].item())
-    time_minute = round(action_tensor[7].item())
-
-    if action == Action.DRINK_MILK:
-        milk_type = MilkType(min(max(round(action_tensor[1].item()), 1), 3))
-        milk_amount = max(round(action_tensor[2].item()), 0)
-        return ShumiAction(
-            action,
-            days=days.days,
-            time=datetime.time(time_hour, time_minute),
-            milk_type=milk_type,
-            milk_amount=milk_amount,
-            since_prev_action_duration=since_prev_action_duration_min,
-        )
-    elif action == Action.SLEEP:
-        sleep_duration_min = max(round(action_tensor[4].item()), 0)
-        return ShumiAction(
-            action,
-            days=days.days,
-            time=datetime.time(time_hour, time_minute),
-            sleep_duration_min=sleep_duration_min,
-            since_prev_action_duration=since_prev_action_duration_min,
-        )
-    elif action == Action.CHANGE_DAIPER:
-        daiper_type = DaiperType(min(max(round(action_tensor[3].item()), 1), 4))
-        return ShumiAction(
-            action,
-            days=days.days,
-            time=datetime.time(time_hour, time_minute),
-            daiper_type=daiper_type,
-            since_prev_action_duration=since_prev_action_duration_min,
-        )
-    raise ValueError("Invalid action type")
 
 
 # Gets a batch of action embeddings for training and validation, in shape of [#, block_size, feature_size].
@@ -365,19 +318,41 @@ class ShumiPatternModel(nn.Module):
             Block(head_num, embedding_size),
             Block(head_num, embedding_size),
         )
-        self.action_type_head = self.head(embedding_size, 3)
+        self.action_type_head = self.head(embedding_size, 4)
+        self.milk_type_head = self.head(embedding_size, 4)
+        self.milk_amount_head = self.head(embedding_size, 1)
+        self.daiper_type_head = self.head(embedding_size, 5)
         self.sleep_duration_head = self.head(embedding_size, 1)
+        self.since_prev_action_duration_head = self.head(embedding_size, 1)
+        self.time_hour_head = self.head(embedding_size, 1)
+        self.time_minute_head = self.head(embedding_size, 1)
 
     def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         embedding = self.proj(x)
         embedding = self.blocks(embedding)
         embedding = self.ln1(embedding)
+
+        # Output heads.
         action_outputs = self.action_type_head(embedding)
+        milk_outputs = self.milk_type_head(embedding)
+        milk_amount_outputs = self.milk_amount_head(embedding)
+        daiper_outputs = self.daiper_type_head(embedding)
         sleep_duration_outputs = self.sleep_duration_head(embedding)
+        since_prev_action_duration_outputs = self.since_prev_action_duration_head(
+            embedding
+        )
+        time_hour_outputs = self.time_hour_head(embedding)
+        time_minute_outputs = self.time_minute_head(embedding)
 
         return {
             "action_type": action_outputs,
+            "milk_type": milk_outputs,
+            "milk_amount": milk_amount_outputs,
+            "daiper_type": daiper_outputs,
             "sleep_duration": sleep_duration_outputs,
+            "since_prev_action_duration": since_prev_action_duration_outputs,
+            "time_hour": time_hour_outputs,
+            "time_minute": time_minute_outputs,
         }
 
     def head(self, input_dim: int, output_dim: int) -> nn.Sequential:
@@ -408,7 +383,13 @@ def estimate_loss() -> dict[str, float]:
     for split in ["train", "val"]:
         losses = {
             "action": torch.zeros(10),
+            "milk": torch.zeros(10),
+            "milk_amount": torch.zeros(10),
+            "daiper": torch.zeros(10),
             "sleep_duration": torch.zeros(10),
+            "since_prev_action_duration": torch.zeros(10),
+            "time_hour": torch.zeros(10),
+            "time_minute": torch.zeros(10),
         }
         for k in range(10):
             xb, yb = getBatchData(split, batch_size=batch_size)
@@ -416,18 +397,58 @@ def estimate_loss() -> dict[str, float]:
             yb = yb.to(device)
             outputs = model(xb)
             action_loss = cross_entropy_loss(
-                outputs["action_type"].view(-1, 3),
-                yb[:, :, 0:3].argmax(dim=-1).view(-1),
+                outputs["action_type"].view(-1, 4),
+                yb[:, :, 0:4].argmax(dim=-1).view(-1),
             )
-            losses["action"][k] += action_loss.item()
+            milk_loss = cross_entropy_loss(
+                outputs["milk_type"].view(-1, 4),
+                yb[:, :, 4:8].argmax(dim=-1).view(-1),
+            )
+            milk_amount_loss = l1_loss(
+                outputs["milk_amount"].view(-1),
+                yb[:, :, 8].view(-1),
+            )
+            daiper_loss = cross_entropy_loss(
+                outputs["daiper_type"].view(-1, 5),
+                yb[:, :, 9:14].argmax(dim=-1).view(-1),
+            )
             sleep_duration_loss = l1_loss(
                 outputs["sleep_duration"].view(-1),
-                yb[:, :, 11].view(-1),
+                yb[:, :, 14].view(-1),
             )
+            since_prev_action_duration_loss = l1_loss(
+                outputs["since_prev_action_duration"].view(-1),
+                yb[:, :, 15].view(-1),
+            )
+            time_hour_loss = l1_loss(
+                outputs["time_hour"].view(-1),
+                yb[:, :, 16].view(-1),
+            )
+            time_minute_loss = l1_loss(
+                outputs["time_minute"].view(-1),
+                yb[:, :, 17].view(-1),
+            )
+            losses["action"][k] += action_loss.item()
+            losses["milk"][k] += milk_loss.item()
+            losses["milk_amount"][k] += milk_amount_loss.item()
+            losses["daiper"][k] += daiper_loss.item()
             losses["sleep_duration"][k] += sleep_duration_loss.item()
+            losses["since_prev_action_duration"][
+                k
+            ] += since_prev_action_duration_loss.item()
+            losses["time_hour"][k] += time_hour_loss.item()
+            losses["time_minute"][k] += time_minute_loss.item()
 
         out[split]["action"] = losses["action"].mean().item()
+        out[split]["milk"] = losses["milk"].mean().item()
+        out[split]["milk_amount"] = losses["milk_amount"].mean().item()
+        out[split]["daiper"] = losses["daiper"].mean().item()
         out[split]["sleep_duration"] = losses["sleep_duration"].mean().item()
+        out[split]["since_prev_action_duration"] = (
+            losses["since_prev_action_duration"].mean().item()
+        )
+        out[split]["time_hour"] = losses["time_hour"].mean().item()
+        out[split]["time_minute"] = losses["time_minute"].mean().item()
     model.train()
     for k1, v1 in out.items():
         print(f"Step {iter}: {k1} loss:")
@@ -446,13 +467,44 @@ for iter in range(5000):
     optimizer.zero_grad(set_to_none=True)
     outputs = model(xb)
     action_loss = cross_entropy_loss(
-        outputs["action_type"].view(-1, 3), yb[:, :, 0:3].argmax(dim=-1).view(-1)
+        outputs["action_type"].view(-1, 4), yb[:, :, 0:4].argmax(dim=-1).view(-1)
+    )
+    milk_loss = cross_entropy_loss(
+        outputs["milk_type"].view(-1, 4), yb[:, :, 4:8].argmax(dim=-1).view(-1)
+    )
+    milk_amount_loss = l1_loss(
+        outputs["milk_amount"].view(-1),
+        yb[:, :, 8].view(-1),
+    )
+    daiper_loss = cross_entropy_loss(
+        outputs["daiper_type"].view(-1, 5), yb[:, :, 9:14].argmax(dim=-1).view(-1)
     )
     sleep_duration_loss = l1_loss(
         outputs["sleep_duration"].view(-1),
-        yb[:, :, 11].view(-1),
+        yb[:, :, 14].view(-1),
     )
-    loss = action_loss + 0.6 * sleep_duration_loss
+    since_prev_action_duration_loss = l1_loss(
+        outputs["since_prev_action_duration"].view(-1),
+        yb[:, :, 15].view(-1),
+    )
+    time_hour_loss = l1_loss(
+        outputs["time_hour"].view(-1),
+        yb[:, :, 16].view(-1),
+    )
+    time_minute_loss = l1_loss(
+        outputs["time_minute"].view(-1),
+        yb[:, :, 17].view(-1),
+    )
+    loss = (
+        action_loss
+        + 0.6 * milk_loss
+        + 0.6 * milk_amount_loss
+        + 0.6 * daiper_loss
+        + 0.6 * sleep_duration_loss
+        + 0.6 * since_prev_action_duration_loss
+        + 0.4 * time_hour_loss
+        + 0.4 * time_minute_loss
+    )
     loss.backward()
     optimizer.step()
 
@@ -467,16 +519,40 @@ for iter in range(5000):
         )
 
 with torch.no_grad():
-    actions = getShumiActions()[-block_size:]
+    actions = getShumiActions()[-block_size - 10 : -10]
     last_actions = (
         torch.stack([getActionEmbedding(action) for action in actions])
         .unsqueeze(0)
         .to(device)
     )
     output = model(last_actions)
+
     action_probs = F.softmax(output["action_type"][:, -1, :], dim=-1)
-    action_type_val = torch.argmax(action_probs).item() + 1
+    action_type_val = torch.argmax(action_probs).item()
     action = Action(action_type_val)
     print(f"Predicted next action: {action}, probabilities: {action_probs}")
+
+    milk_type_probs = F.softmax(output["milk_type"][:, -1, :], dim=-1)
+    milk_type_val = torch.argmax(milk_type_probs).item()
+    milk_type = MilkType(milk_type_val)
+    print(f"Milk type: {milk_type}, probabilities: {milk_type_probs}")
+    milk_amount = round(output["milk_amount"][:, -1, :].item())
+    print(f"Predicted milk amount (ml): {milk_amount}")
+
+    daiper_type_probs = F.softmax(output["daiper_type"][:, -1, :], dim=-1)
+    dayper_type_val = torch.argmax(daiper_type_probs).item()
+    daiper_type = DaiperType(dayper_type_val)
+    print(f"Daiper type: {daiper_type}, probabilities: {daiper_type_probs}")
+
     sleep_duration = round(output["sleep_duration"][:, -1, :].item())
     print(f"Predicted sleep duration (minutes): {sleep_duration}")
+
+    since_prev_action_duration = round(
+        output["since_prev_action_duration"][:, -1, :].item()
+    )
+    print(
+        f"Predicted since previous action duration (minutes): {since_prev_action_duration}"
+    )
+    time_hour = round(output["time_hour"][:, -1, :].item())
+    time_minute = round(output["time_minute"][:, -1, :].item())
+    print(f"Predicted time: {time_hour:02d}:{time_minute:02d}")
