@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import re
 import torch
 import torch.nn as nn
@@ -20,7 +21,7 @@ from shumi_action import (
 # Loads Shumi actions from the JSON file. Ordered by date and time in an ascending order.
 def getShumiActions() -> list[ShumiAction]:
     with open(
-        "../shumi_server/shumi_server/shumi.json",
+        os.path.dirname(__file__) + "/../shumi_server/shumi_server/shumi.json",
         "r",
     ) as file:
         # Use json.load() to deserialize the file object into a Python dictionary

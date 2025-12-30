@@ -6,9 +6,7 @@ from model import ShumiPatternModel, getShumiActions, getActionEmbedding
 from shumi_action import Action, MilkType, DaiperType, ShumiAction, BIRTHDAY
 
 block_size = 32
-num_of_predictions = 20
 device = getDevice()
-print(f"Using device: {device}")
 
 model = ShumiPatternModel()
 model.load_state_dict(torch.load("shumi_pattern_model.pth"))
@@ -136,8 +134,3 @@ def predict_next_actions(
             actions.append(predictions[-1][0])
             actions = actions[1:]
     return predictions
-
-
-next_actinos = predict_next_actions(num_of_predictions)
-for action in next_actinos:
-    print(f"Predict next {action[0]} with probabilities {action[1]}")
