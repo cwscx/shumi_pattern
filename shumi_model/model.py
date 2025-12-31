@@ -37,7 +37,15 @@ def getShumiActions() -> list[ShumiAction]:
             shumi_borndate = datetime.date(2025, 9, 6)
             days = (date - shumi_borndate).days
 
-            for pattern_action in pattern["actions"]:
+            # In case the actions are not sorted by time. For sleep, adds the sleep duration instead.
+            pattern_actions = pattern["actions"]
+            pattern_actions.sort(
+                key=lambda action: (
+                    action["time_end"] if "time_end" in action else action["time_start"]
+                )
+            )
+
+            for pattern_action in pattern_actions:
                 action = getAction(pattern_action["action"])
                 prev_action = shumi_actions[-1] if len(shumi_actions) > 0 else None
 
@@ -80,17 +88,15 @@ def getShumiActions() -> list[ShumiAction]:
                         prev_action=prev_action,
                     )
                     shumi_actions.append(shumi_action)
-        # In case the actions are not sorted by time. For sleep, adds the sleep duration instead.
-        shumi_actions.sort(
-            key=lambda action: action.date_time
-            + datetime.timedelta(
-                minutes=(
-                    action.sleep_duration_min
-                    if action.sleep_duration_min is not None
-                    else 0
-                )
-            )
-        )
+
+        # Add warnings if we see the dataset order is mis-ordered.
+        for shumi_action in shumi_actions:
+            if (
+                shumi_action.since_prev_action_duration is not None
+                and shumi_action.since_prev_action_duration.total_seconds() < 0
+            ):
+                print(shumi_action)
+
         return shumi_actions
 
 

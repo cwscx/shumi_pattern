@@ -45,6 +45,7 @@ def predict_next_actions(
             )
 
             if action == Action.UNKNOWN_ACTION or since_prev_action_duration < 0:
+                print(f"unexpcted action {action} or {since_prev_action_duration}")
                 continue
 
             last_event = actions[-1]
@@ -71,6 +72,7 @@ def predict_next_actions(
                 sleep_duration = round(output["sleep_duration"][:, -1, :].item())
 
                 if sleep_duration < 0:
+                    print(f"unexpcted sleep duration {sleep_duration}")
                     continue
 
                 predicted_action = ShumiAction(
@@ -95,6 +97,9 @@ def predict_next_actions(
                 milk_amount = round(output["milk_amount"][:, -1, :].item())
 
                 if milk_type == MilkType.UNKNOWN_ACTION or milk_amount < 0:
+                    print(
+                        "unexpected milk type {milk_type} or milk amount {milk_amount}"
+                    )
                     continue
 
                 predicted_action = ShumiAction(
@@ -115,6 +120,7 @@ def predict_next_actions(
                 daiper_type = DaiperType(daiper_type_val)
 
                 if daiper_type == DaiperType.UNKNOWN_DAIPER_TYPE:
+                    print("unexpcted daiper type {daiper_type}")
                     continue
 
                 daiper_type_prob = round(

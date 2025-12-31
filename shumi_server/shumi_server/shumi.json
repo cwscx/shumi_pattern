@@ -706,14 +706,14 @@
                     "volume": "50ml"
                 },
                 {
-                    "action": "睡眠",
-                    "time_start": "17:01",
-                    "time_end": "18:19"
-                },
-                {
                     "action": "换尿布",
                     "time_start": "15:56",
                     "type": "嘘嘘"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "17:01",
+                    "time_end": "18:19"
                 },
                 {
                     "action": "换尿布",
@@ -727,14 +727,14 @@
                     "volume": "130ml"
                 },
                 {
-                    "action": "睡眠",
-                    "time_start": "20:10",
-                    "time_end": "21:22"
-                },
-                {
                     "action": "换尿布",
                     "time_start": "19:50",
                     "type": "干爽"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "20:10",
+                    "time_end": "21:22"
                 },
                 {
                     "action": "喝奶",
@@ -1078,15 +1078,15 @@
                     "type": "嘘嘘"
                 },
                 {
-                    "action": "换尿布",
-                    "time_start": "20:10",
-                    "type": "嘘嘘"
-                },
-                {
                     "action": "喝奶",
                     "time_start": "19:36",
                     "type": "瓶喂母乳",
                     "volume": "130ml"
+                },
+                {
+                    "action": "换尿布",
+                    "time_start": "20:10",
+                    "type": "嘘嘘"
                 },
                 {
                     "action": "睡眠",
@@ -1159,7 +1159,8 @@
                 },
                 {
                     "action": "睡眠",
-                    "time_start": "14:30"
+                    "time_start": "14:30",
+                    "time_end": "15:50"
                 }
             ]
         }

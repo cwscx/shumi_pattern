@@ -113,7 +113,7 @@ train_time_start = datetime.datetime.now()
 train_time_prev = train_time_start
 
 model_release_notes = []
-for iter in range(iterations):
+for iter in range(1, iterations + 1):
     xb, yb = getBatchData("train", batch_size=batch_size)
     xb = xb.to(device)
     yb = yb.to(device)
