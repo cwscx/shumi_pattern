@@ -208,18 +208,16 @@ for iter in range(iterations + 1):
     loss.backward()
     optimizer.step()
 
-    if iter % 100 == 0:
+    if iter % 200 == 0:
         estimate_loss()
         train_time_now = datetime.datetime.now()
         elapsed = train_time_now - train_time_prev
         total_elapsed = train_time_now - train_time_start
         train_time_prev = train_time_now
 
-        losses.append(
+        print(
             f"Elapsed time for last 1000 iters: {elapsed}, total elapsed time: {total_elapsed}"
         )
-        print(losses[-1])
-        model_release_notes = losses
 
 # Save model.
-torch.save(model.state_dict(), os.path.dirname(__file__) + "/shumi_pattern_model.pth")
+torch.save(model.state_dict(), "shumi_pattern_model.pth")

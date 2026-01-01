@@ -14,9 +14,6 @@ model = ShumiPatternModel()
 model.load_state_dict(
     torch.load(os.path.dirname(__file__) + "/shumi_pattern_model.pth")
 )
-model.load_state_dict(
-    torch.load(os.path.dirname(__file__) + "/shumi_pattern_model.pth")
-)
 model.to(device)
 model.eval()
 
@@ -104,13 +101,16 @@ def predict_next_actions(
                 milk_type_probs = F.softmax(output["milk_type"][:, -1, :], dim=-1)
                 milk_type_val = torch.argmax(milk_type_probs).item()
                 milk_type = MilkType(milk_type_val)
-                probs["milk_type"] = milk_type_probs
+                milk_type_prob = round(
+                    milk_type_probs.squeeze()[torch.argmax(milk_type_probs)].item(), 4
+                )
+                probs["milk_type"] = milk_type_prob
 
                 milk_amount = round(output["milk_amount"][:, -1, :].item())
 
-                if milk_type == MilkType.UNKNOWN_ACTION or milk_amount < 0:
+                if milk_type == MilkType.UNKNOWN_MILK_TYPE or milk_amount < 0:
                     print(
-                        "unexpected milk type {milk_type} or milk amount {milk_amount}"
+                        f"unexpected milk type {milk_type} or milk amount {milk_amount}"
                     )
                     continue
 
@@ -130,7 +130,11 @@ def predict_next_actions(
                 daiper_type_probs = F.softmax(output["daiper_type"][:, -1, :], dim=-1)
                 daiper_type_val = torch.argmax(daiper_type_probs).item()
                 daiper_type = DaiperType(daiper_type_val)
-                probs["daiper_type"] = daiper_type_probs
+                daiper_type_prob = round(
+                    daiper_type_probs.squeeze()[torch.argmax(daiper_type_probs)].item(),
+                    4,
+                )
+                probs["daiper_type"] = daiper_type_prob
 
                 predicted_action = ShumiAction(
                     action=action,

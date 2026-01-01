@@ -84,7 +84,7 @@ class ShumiAction:
         if self.action == Action.DRINK_MILK:
             return f"{time_str}, Action: Drink Milk({Action.DRINK_MILK.value}), Type: {self.milk_type}, Amount: {self.milk_amount} ml"
         elif self.action == Action.SLEEP:
-            return f"{time_str}, Action: Sleep({Action.SLEEP.value}]), Duration: {self.sleep_duration_min} minutes"
+            return f"{time_str}, Action: Sleep({Action.SLEEP.value}), Duration: {self.sleep_duration_min} minutes"
         elif self.action == Action.CHANGE_DAIPER:
             return f"{time_str}, Action: Change Daiper({Action.CHANGE_DAIPER.value}), Type: {self.daiper_type}"
         else:
