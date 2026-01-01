@@ -1,0 +1,69 @@
+
+Saved model at 2025-12-30 15:54:28.793008
+
+Step 9000: train loss:
+  - action: 0.0000
+  - milk: 0.0000
+  - milk_amount: 0.5237
+  - daiper: 0.0000
+  - sleep_duration: 0.5439
+  - since_prev_action_duration: 0.4856
+  - time_hour: 0.2601
+  - time_minute: 0.5063
+Step 9000: val loss:
+  - action: 0.0049
+  - milk: 0.0008
+  - milk_amount: 0.6872
+  - daiper: 0.0040
+  - sleep_duration: 0.5765
+  - since_prev_action_duration: 0.5136
+  - time_hour: 0.2652
+  - time_minute: 0.6167
+Elapsed time for last 1000 iters: 0:00:15.685984, total elapsed time: 0:02:21.418117
+==================================
+
+Saved model at 2025-12-30 16:01:52.903998
+
+Step 9000: train loss:
+  - action: 0.0000
+  - milk: 0.0000
+  - milk_amount: 0.5846
+  - daiper: 0.0000
+  - sleep_duration: 0.7325
+  - since_prev_action_duration: 0.5546
+  - time_hour: 0.2448
+  - time_minute: 0.5218
+Step 9000: val loss:
+  - action: 0.0000
+  - milk: 0.0000
+  - milk_amount: 0.6630
+  - daiper: 0.0000
+  - sleep_duration: 0.7268
+  - since_prev_action_duration: 0.6140
+  - time_hour: 0.2710
+  - time_minute: 0.6295
+Elapsed time for last 1000 iters: 0:00:15.596319, total elapsed time: 0:02:20.865525
+==================================
+
+Saved model at 2025-12-30 16:35:27.414722
+
+Step 10000: train loss:
+  - action: 0.0000
+  - milk: 0.0000
+  - milk_amount: 0.7906
+  - daiper: 0.0001
+  - sleep_duration: 0.6793
+  - since_prev_action_duration: 0.3844
+  - time_hour: 0.2034
+  - time_minute: 0.4557
+Step 10000: val loss:
+  - action: 0.0124
+  - milk: 0.0068
+  - milk_amount: 0.9388
+  - daiper: 0.0114
+  - sleep_duration: 0.8513
+  - since_prev_action_duration: 0.4787
+  - time_hour: 0.2280
+  - time_minute: 0.5902
+Elapsed time for last 1000 iters: 0:00:15.946629, total elapsed time: 0:04:08.097773
+==================================

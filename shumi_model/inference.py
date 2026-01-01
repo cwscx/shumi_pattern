@@ -1,5 +1,6 @@
 import datetime
 import os
+import os
 import torch
 import torch.nn.functional as F
 from device import getDevice
@@ -7,10 +8,12 @@ from model import ShumiPatternModel, getShumiActions, getActionEmbedding, block_
 from shumi_action import Action, MilkType, DaiperType, ShumiAction, BIRTHDAY
 
 device = getDevice()
-print(f"Using device: {device}")
 
 temperature = 1.0
 model = ShumiPatternModel()
+model.load_state_dict(
+    torch.load(os.path.dirname(__file__) + "/shumi_pattern_model.pth")
+)
 model.load_state_dict(
     torch.load(os.path.dirname(__file__) + "/shumi_pattern_model.pth")
 )
@@ -54,6 +57,11 @@ def predict_next_actions(
             since_prev_action_duration = round(
                 output["since_prev_action_duration"][:, -1, :].item()
             )
+
+            if action == Action.UNKNOWN_ACTION or since_prev_action_duration < 0:
+                print(f"unexpcted action {action} or {since_prev_action_duration}")
+                continue
+
             last_event = actions[-1]
             last_event_datetime = datetime.datetime(
                 year=last_event.date_time.year,
@@ -76,6 +84,11 @@ def predict_next_actions(
 
             if action == Action.SLEEP:
                 sleep_duration = round(output["sleep_duration"][:, -1, :].item())
+
+                if sleep_duration < 0:
+                    print(f"unexpcted sleep duration {sleep_duration}")
+                    continue
+
                 predicted_action = ShumiAction(
                     action=action,
                     days=days,
@@ -94,6 +107,12 @@ def predict_next_actions(
                 probs["milk_type"] = milk_type_probs
 
                 milk_amount = round(output["milk_amount"][:, -1, :].item())
+
+                if milk_type == MilkType.UNKNOWN_ACTION or milk_amount < 0:
+                    print(
+                        "unexpected milk type {milk_type} or milk amount {milk_amount}"
+                    )
+                    continue
 
                 predicted_action = ShumiAction(
                     action=action,

@@ -1,5 +1,6 @@
 import datetime
 import os
+import os
 import torch
 import torch.nn as nn
 from model import ShumiPatternModel, getBatchData, batch_size
@@ -19,7 +20,7 @@ cross_entropy_loss = nn.CrossEntropyLoss(label_smoothing=0.02)
 
 
 @torch.no_grad()
-def estimate_loss() -> dict[str, float]:
+def estimate_loss() -> list[str]:
     out = {
         "train": {},
         "val": {},
@@ -141,11 +142,15 @@ def estimate_loss() -> dict[str, float]:
         out[split]["weeks"] = losses["weeks"].mean().item()
 
     model.train()
+
+    losses = []
     for k1, v1 in out.items():
-        print(f"Step {iter}: {k1} loss:")
+        losses.append(f"Step {iter}: {k1} loss:")
+        print(losses[-1])
         for k2, v2 in v1.items():
-            print(f"  - {k2}: {v2:.4f}")
-    return out
+            losses.append(f"  - {k2}: {v2:.4f}")
+            print(losses[-1])
+    return losses
 
 
 train_time_start = datetime.datetime.now()
@@ -209,10 +214,12 @@ for iter in range(iterations + 1):
         elapsed = train_time_now - train_time_prev
         total_elapsed = train_time_now - train_time_start
         train_time_prev = train_time_now
-        print(
+
+        losses.append(
             f"Elapsed time for last 1000 iters: {elapsed}, total elapsed time: {total_elapsed}"
         )
-
+        print(losses[-1])
+        model_release_notes = losses
 
 # Save model.
 torch.save(model.state_dict(), os.path.dirname(__file__) + "/shumi_pattern_model.pth")
