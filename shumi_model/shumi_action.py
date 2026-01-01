@@ -13,7 +13,7 @@ class Action(Enum):
 
 
 class MilkType(Enum):
-    UNKNOWN_ACTION = 0
+    UNKNOWN_MILK_TYPE = 0
     BOTTLE_BREAST_MILK = 1
     BOTTLE_FORMULA_MILK = 2
     BREAST_FEED = 3
@@ -82,15 +82,11 @@ class ShumiAction:
     def __str__(self) -> str:
         time_str = f"Day {self.days} on {self.date_time.date()}, Time {self.date_time.hour:02d}:{self.date_time.minute:02d}, {self.since_prev_action_duration} since last action"
         if self.action == Action.DRINK_MILK:
-            # Special case for breast feed to show amount in minutes.
-            if self.milk_type is MilkType.BREAST_FEED:
-                return f"{time_str}, Action: Drink Milk, Type: {self.milk_type}, Amount: {self.milk_amount} minutes"
-            else:
-                return f"{time_str}, Action: Drink Milk, Type: {self.milk_type}, Amount: {self.milk_amount} ml"
+            return f"{time_str}, Action: Drink Milk({Action.DRINK_MILK.value}), Type: {self.milk_type}, Amount: {self.milk_amount} ml"
         elif self.action == Action.SLEEP:
-            return f"{time_str}, Action: Sleep, Duration: {self.sleep_duration_min} minutes"
+            return f"{time_str}, Action: Sleep({Action.SLEEP.value}]), Duration: {self.sleep_duration_min} minutes"
         elif self.action == Action.CHANGE_DAIPER:
-            return f"{time_str}, Action: Change Daiper, Type: {self.daiper_type}"
+            return f"{time_str}, Action: Change Daiper({Action.CHANGE_DAIPER.value}), Type: {self.daiper_type}"
         else:
             return "Unknown Action"
 
