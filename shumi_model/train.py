@@ -1,6 +1,5 @@
 import datetime
 import os
-import os
 import torch
 import torch.nn as nn
 from model import ShumiPatternModel, getBatchData, batch_size
@@ -220,4 +219,4 @@ for iter in range(iterations + 1):
         )
 
 # Save model.
-torch.save(model.state_dict(), "shumi_pattern_model.pth")
+torch.save(model.state_dict(), os.path.dirname(__file__) + "/shumi_pattern_model.pth")

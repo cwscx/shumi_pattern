@@ -1,6 +1,5 @@
 import datetime
 import os
-import os
 import torch
 import torch.nn.functional as F
 from device import getDevice
