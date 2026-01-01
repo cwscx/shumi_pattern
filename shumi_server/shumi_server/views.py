@@ -178,70 +178,150 @@ def isWithinTimeWindow(timeWindowHour, time1, time2):
     time_difference = min(abs(time1 - time2), abs(time2 - time1))
     return abs(time_difference.seconds) <= (timeWindowHour * 60 * 60)
 
+# @csrf_exempt
+# def get_gemini_insights(request):
+#     if request.method != 'POST':
+#         return JsonResponse({"error": "Only POST allowed"}, status=405)
+
+#     try:
+#         # Load the latest data from shumi.json
+#         with open(JSON_FILE_PATH, "r", encoding='utf-8') as file:
+#             shumi_pattern = json.load(file)
+        
+#         basic_info = shumi_pattern.get("info", {})
+#         patterns = shumi_pattern.get("patterns", [])
+
+#         # Logic to extract sub-patterns (from your script)
+#         def getPatterns(action_type):
+#             return [{"date": day["date"], "actions": [a for a in day.get("actions", []) if a.get("action") == action_type]} for day in patterns]
+
+#         def getTimePatterns():
+#             now = datetime.now()
+#             return [{"date": day["date"], "actions": [a for a in day.get("actions", []) if isWithinTimeWindow(2, getTime(a.get("time_start")), now)]} for day in patterns]
+
+#         milk_patterns = getPatterns("喝奶")
+#         daiper_patterns = getPatterns("换尿布")
+#         sleep_patterns = getPatterns("睡眠")
+#         time_patterns = getTimePatterns()
+
+#         # Get user query from frontend if it exists
+#         body = json.loads(request.body) if request.body else {}
+#         user_query = body.get("query", "").strip()
+
+#         print("******* user query is ")
+#         print(user_query)
+
+#         # Build Prompts (Your CoT Logic)
+#         prompts = [
+#            f"Here's the basic info of my daughter 施舒米 {basic_info}",
+#     "----------",
+#     # role-specific prompt
+#     "You are an infant behavior prediction assistant which offers emotional support for parents.",
+#     # COT
+#     "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points. ",
+#     "For example, when you predict, you should calculate the time difference between each actions instead of just predicting from the previous timestamp.",
+#     # user query.
+#     (
+#         f"""
+#         Please do the following steps:
+#         1. Based on {time_patterns}, predict her next possible actions and time ranges with confidence interval;
+#         2. Summarize her actions in the last 3 days in a clear and succinct way;
+#         3. Based on {milk_patterns}, analyze her long-term milk drinking behavior;
+#         4. Based on {daiper_patterns}, analyzer her long-term daiper behavior;
+#         5. Based on {sleep_patterns}, analyze her long-term sleep behavior;
+#         """
+#         if len(user_query) == 0
+#         else f"Based on 施舒米's behavior patterns {patterns}, please answer user's initial query;"
+#     ),
+#     "----------",
+#     # user context prompt.
+#     f"""
+#     Use the following user profile to personalize the output.
+#     Write in Chinese. If a day hasn't finished yet, only use that date's data for prediction, but not for summarization.
+#     The default timezone is PST, but if the timezone changes, please consider jet lag impact when analyzing, and provide suggestioins accordingly.
+#     """,
+#         ]
+
+#         # Call Gemini (Non-streaming for simpler UI display)
+#         response = client.models.generate_content(
+#             model="gemini-2.5-flash", contents="\n".join(prompts)
+#         )
+
+#         return JsonResponse({
+#             "status": "success",
+#             "insights": response.text
+#         })
+
+#     except Exception as e:
+#         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
 @csrf_exempt
 def get_gemini_insights(request):
     if request.method != 'POST':
-        return JsonResponse({"error": "Only POST allowed"}, status=405)
+        return JsonResponse({"status": "error", "message": "Only POST allowed"}, status=405)
 
     try:
-        # Load the latest data from shumi.json
+        # 1. Load Data
         with open(JSON_FILE_PATH, "r", encoding='utf-8') as file:
             shumi_pattern = json.load(file)
         
         basic_info = shumi_pattern.get("info", {})
         patterns = shumi_pattern.get("patterns", [])
 
-        # Logic to extract sub-patterns (from your script)
-        def getPatterns(action_type):
+        # 2. Extract specific patterns for the AI
+        def get_specific_actions(action_type):
             return [{"date": day["date"], "actions": [a for a in day.get("actions", []) if a.get("action") == action_type]} for day in patterns]
 
-        def getTimePatterns():
-            now = datetime.now()
-            return [{"date": day["date"], "actions": [a for a in day.get("actions", []) if isWithinTimeWindow(2, getTime(a.get("time_start")), now)]} for day in patterns]
+        milk_data = get_specific_actions("喝奶")
+        diaper_data = get_specific_actions("换尿布")
+        sleep_data = get_specific_actions("睡眠")
 
-        milk_patterns = getPatterns("喝奶")
-        daiper_patterns = getPatterns("换尿布")
-        sleep_patterns = getPatterns("睡眠")
-        time_patterns = getTimePatterns()
-
-        # Get user query from frontend if it exists
+        # 3. Parse User Query
         body = json.loads(request.body) if request.body else {}
         user_query = body.get("query", "").strip()
 
-        # Build Prompts (Your CoT Logic)
-        prompts = [
-           f"Here's the basic info of my daughter 施舒米 {basic_info}",
-    "----------",
-    # role-specific prompt
-    "You are an infant behavior prediction assistant which offers emotional support for parents.",
-    # COT
-    "If there is a reasoning process to generate the response, think step by step and put your steps in bullet points. ",
-    "For example, when you predict, you should calculate the time difference between each actions instead of just predicting from the previous timestamp.",
-    # user query.
-    (
-        f"""
-        Please do the following steps:
-        1. Based on {time_patterns}, predict her next possible actions and time ranges with confidence interval;
-        2. Summarize her actions in the last 3 days in a clear and succinct way;
-        3. Based on {milk_patterns}, analyze her long-term milk drinking behavior;
-        4. Based on {daiper_patterns}, analyzer her long-term daiper behavior;
-        5. Based on {sleep_patterns}, analyze her long-term sleep behavior;
+        # 4. Construct the Structured Prompt
+        # System Instructions
+        system_prompt = """
+        Role: 你是一位资深婴儿行为专家和情感支持助手。
+        Context: 这是我女儿的生日是2025/9/6
+        Instructions:
+        - 必须使用中文回答。
+        - 如果用户提出了具体问题，请**优先且直接**回答该问题。
+        - 在回答之后，提供基于数据的深度分析。
+        - 推理过程请使用分点（Bullet Points）。
         """
-        if len(user_query) == 0
-        else f"Based on 施舒米's behavior patterns {patterns}, please answer user's initial query;"
-    ),
-    "----------",
-    # user context prompt.
-    f"""
-    Use the following user profile to personalize the output.
-    Write in Chinese. If a day hasn't finished yet, only use that date's data for prediction, but not for summarization.
-    The default timezone is PST, but if the timezone changes, please consider jet lag impact when analyzing, and provide suggestioins accordingly.
-    """,
-        ]
 
-        # Call Gemini (Non-streaming for simpler UI display)
+        # Data Blocks using XML-style tags for clarity
+        data_context = f"""
+        <BABY_INFO> {json.dumps(basic_info, ensure_ascii=False)} </BABY_INFO>
+        <MILK_LOGS> {json.dumps(milk_data[-7:], ensure_ascii=False)} </MILK_LOGS>
+        <SLEEP_LOGS> {json.dumps(sleep_data[-7:], ensure_ascii=False)} </SLEEP_LOGS>
+        <DIAPER_LOGS> {json.dumps(diaper_data[-7:], ensure_ascii=False)} </DIAPER_LOGS>
+        <FULL_HISTORY> {json.dumps(patterns[-3:], ensure_ascii=False)} </FULL_HISTORY>
+        """
+
+        # Task Logic
+        if not user_query:
+            task_prompt = """
+            User has not asked a specific question. Please provide a general report:
+            1. 预测接下来的动作及时间区间（含置信度）。
+            2. 简要总结过去3天的整体表现。
+            3. 分析长期的喂奶、睡眠和尿布规律。
+            """
+        else:
+            task_prompt = f"""
+            重要任务：用户提出了一个具体问题，请结合上述所有数据，给出专业且详尽的解答。
+            用户问题："{user_query}"
+            """
+
+        # Final Assembly: Instructions -> Data -> Specific Task
+        final_prompt = f"{system_prompt}\n{data_context}\n{task_prompt}"
+
+        # 5. Call Gemini
         response = client.models.generate_content(
-            model="gemini-2.5-flash", contents="\n".join(prompts)
+            model="gemini-2.5-flash", # Highly recommend 2.0-flash for speed/logic
+            contents=final_prompt
         )
 
         return JsonResponse({
