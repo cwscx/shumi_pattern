@@ -106,7 +106,22 @@ def one_hot(enum_val: int, num_classes: int):
     return F.one_hot(torch.tensor(enum_val), num_classes=num_classes).float()
 
 
-# Convert a ShumiAction to embedding tensor in shape [18].
+def getCounts() -> torch.Tensor:
+    actions = getShumiActions()
+    counts = [0] * (len(Action) - 1)
+
+    for action in actions:
+        if action.action == Action.DRINK_MILK:
+            counts[0] += 1
+        elif action.action == Action.SLEEP:
+            counts[1] += 1
+        elif action.action == Action.CHANGE_DAIPER:
+            counts[2] += 1
+
+    return torch.tensor(counts)
+
+
+# Convert a ShumiAction to embedding tensor in shape [19].
 # The features are:
 #   - Action Type (float, 4) [0:4]
 #   - Milk Type (float, 4) [4:8]
@@ -116,14 +131,23 @@ def one_hot(enum_val: int, num_classes: int):
 #   - Since Previous Action Duration in minutes (float, 1) [15]
 #   - Time Hour (float, 1) [16]
 #   - Time Minute (float, 1) [17]
+#   - Weeks (float, 1) [18]
 def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
     action_type_tensor = one_hot(shumi_action.action.value, len(Action))
     milk_type_tensor = one_hot(
-        shumi_action.milk_type.value if shumi_action.milk_type is not None else 0,
+        (
+            shumi_action.milk_type.value
+            if shumi_action.milk_type is not None
+            else MilkType.UNKNOWN_MILK_TYPE.value
+        ),
         len(MilkType),
     )
     daiper_type_tensor = one_hot(
-        shumi_action.daiper_type.value if shumi_action.daiper_type is not None else 0,
+        (
+            shumi_action.daiper_type.value
+            if shumi_action.daiper_type is not None
+            else DaiperType.UNKNOWN_DAIPER_TYPE.value
+        ),
         len(DaiperType),
     )
     milk_amount_tensor = torch.tensor(
@@ -148,6 +172,7 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
     time_minute_tensor = torch.tensor(
         [shumi_action.date_time.minute], dtype=torch.float32
     )
+    weeks_tensor = torch.tensor([shumi_action.days // 7], dtype=torch.float32)
 
     tensor = torch.cat(
         [
@@ -159,6 +184,7 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
             since_prev_action_duration_min_tensor,
             time_hour_tensor,
             time_minute_tensor,
+            weeks_tensor,
         ],
         dim=0,
     )
@@ -171,37 +197,22 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
 def getActionEmbeddings(block_size: int) -> tuple[torch.Tensor, torch.Tensor]:
     actions = getShumiActions()
     actions_tensor = torch.stack([getActionEmbedding(action) for action in actions])
+    action_size = len(actions)
 
-    end_offsets = torch.randint(low=1, high=len(actions) - 1, size=(len(actions) - 1,))
+    start_offsets = torch.arange(start=0, end=action_size - block_size - 1)
     inputs = torch.stack(
         [
-            # If the preceding actions do not have enough length, pad with zeros at the beginning.
-            F.pad(
-                actions_tensor[max(0, end_offset - block_size - 1) : end_offset],
-                (
-                    0,
-                    0,
-                    0,
-                    block_size - (end_offset - max(0, end_offset - block_size - 1)),
-                ),
-            )
-            for end_offset in end_offsets
-        ]
+            actions_tensor[start_offset : start_offset + block_size]
+            for start_offset in start_offsets
+        ],
+        dim=0,
     )
     outputs = torch.stack(
         [
-            # If the preceding actions do not have enough length, pad with zeros at the beginning.
-            F.pad(
-                actions_tensor[max(1, end_offset - block_size) : end_offset + 1],
-                (
-                    0,
-                    0,
-                    0,
-                    block_size - (end_offset - max(0, end_offset - block_size - 1)),
-                ),
-            )
-            for end_offset in end_offsets
-        ]
+            actions_tensor[start_offset + 1 : start_offset + block_size + 1]
+            for start_offset in start_offsets
+        ],
+        dim=0,
     )
     return inputs, outputs
 
@@ -211,18 +222,28 @@ def getData(
     block_size: int,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     x, y = getActionEmbeddings(block_size)
-    n = int(len(x) * 0.8)
 
+    # Sanity check if the y is the next token of x.
+    is_predict_next_token = torch.allclose(x[:, 1:, :], y[:, :-1, :])
+    is_predict_current_token = torch.allclose(x, y)
+    if not is_predict_next_token:
+        print(f"[Warning] Is not the next token to predict")
+        if is_predict_current_token:
+            print(f"[Warning]  Is predicting the current token")
+
+    n = int(len(x) * 0.8)
     return x[:n], y[:n], x[n:], y[n:]
 
 
-head_num = 4
-embedding_size = 128
-block_size = 32
+head_num = 2
+embedding_size = 64
+block_num = 2
+block_size = 16
 batch_size = 32
-dropout_rate = 0.1
+dropout_rate = 0.25
 train_x, train_y, test_x, test_y = getData(block_size)
 input_size = train_x.shape[2]
+print(f"Train dataset shape {train_x.shape}, test dataset shape {test_x.shape}.")
 
 
 # Gets a batch of data for training or validation in one run.
@@ -240,6 +261,7 @@ def getBatchData(
 class Head(nn.Module):
     def __init__(self, head_size: int, embedding_size: int = embedding_size):
         super().__init__()
+        self.head_size = head_size
         self.key = nn.Linear(embedding_size, head_size, bias=False)
         self.query = nn.Linear(embedding_size, head_size, bias=False)
         self.value = nn.Linear(embedding_size, head_size, bias=False)
@@ -250,7 +272,7 @@ class Head(nn.Module):
         B, T, C = x.shape
         k = self.key(x)
         q = self.query(x)
-        weights = q @ k.transpose(-2, -1) * (embedding_size**-0.5)
+        weights = q @ k.transpose(-2, -1) * (self.head_size**-0.5)
         weights = weights.masked_fill(self.tril[:T, :T] == 0, float("-inf"))
         weights = F.softmax(weights, dim=-1)
         weights = self.dropout(weights)
@@ -280,7 +302,6 @@ class FeedForwardNN(nn.Module):
             nn.Linear(embedding_size, 4 * embedding_size),
             nn.ReLU(),
             nn.Linear(4 * embedding_size, embedding_size),
-            nn.ReLU(),
             nn.Dropout(dropout_rate),
         )
 
@@ -310,15 +331,16 @@ class ShumiPatternModel(nn.Module):
     def __init__(
         self,
         input_size: int = input_size,
+        block_size: int = block_size,
+        block_num: int = block_num,
         embedding_size: int = embedding_size,
     ):
         super().__init__()
         self.proj = nn.Linear(input_size, embedding_size)
+        self.position_embedding = nn.Embedding(block_size, embedding_size)
         self.ln1 = nn.LayerNorm(embedding_size)
         self.blocks = nn.Sequential(
-            Block(head_num, embedding_size),
-            Block(head_num, embedding_size),
-            Block(head_num, embedding_size),
+            *[Block(head_num, embedding_size) for _ in range(block_num)]
         )
         self.action_type_head = self.head(embedding_size, 4)
         self.milk_type_head = self.head(embedding_size, 4)
@@ -328,9 +350,13 @@ class ShumiPatternModel(nn.Module):
         self.since_prev_action_duration_head = self.head(embedding_size, 1)
         self.time_hour_head = self.head(embedding_size, 1)
         self.time_minute_head = self.head(embedding_size, 1)
+        self.weeks_head = self.head(embedding_size, 1)
 
     def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
-        embedding = self.proj(x)
+        _, block_size, _ = x.shape
+        pos = torch.arange(block_size, device=x.device)
+        pos_emb = self.position_embedding(pos)
+        embedding = self.proj(x) + pos_emb
         embedding = self.blocks(embedding)
         embedding = self.ln1(embedding)
 
@@ -345,6 +371,7 @@ class ShumiPatternModel(nn.Module):
         )
         time_hour_outputs = self.time_hour_head(embedding)
         time_minute_outputs = self.time_minute_head(embedding)
+        weeks_outputs = self.weeks_head(embedding)
 
         return {
             "action_type": action_outputs,
@@ -355,11 +382,12 @@ class ShumiPatternModel(nn.Module):
             "since_prev_action_duration": since_prev_action_duration_outputs,
             "time_hour": time_hour_outputs,
             "time_minute": time_minute_outputs,
+            "weeks": weeks_outputs,
         }
 
     def head(self, input_dim: int, output_dim: int) -> nn.Sequential:
         return nn.Sequential(
-            nn.Linear(input_dim, round(input_dim / 4)),
+            nn.Linear(input_dim, round(input_dim**0.5)),
             nn.ReLU(),
-            nn.Linear(round(input_dim / 4), output_dim),
+            nn.Linear(round(input_dim**0.5), output_dim),
         )
