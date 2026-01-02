@@ -1,5 +1,6 @@
 import datetime
 import json
+import math
 import os
 import re
 import torch
@@ -121,6 +122,11 @@ def getCounts() -> torch.Tensor:
     return torch.tensor(counts)
 
 
+milk_amount_std = 200.0
+sleep_duration_std = 180.0
+since_prev_action_duration_std = 180.0
+
+
 # Convert a ShumiAction to embedding tensor in shape [19].
 # The features are:
 #   - Action Type (float, 4) [0:4]
@@ -150,29 +156,39 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
         ),
         len(DaiperType),
     )
-    milk_amount_tensor = torch.tensor(
-        [shumi_action.milk_amount if shumi_action.milk_amount is not None else 0],
-        dtype=torch.float32,
+    milk_amount_tensor = (
+        torch.tensor(
+            [shumi_action.milk_amount if shumi_action.milk_amount is not None else 0],
+            dtype=torch.float32,
+        )
+        / milk_amount_std
     )
-    sleep_duration_tensor = torch.tensor(
-        [
-            (
-                shumi_action.sleep_duration_min
-                if shumi_action.sleep_duration_min is not None
-                else 0
-            )
-        ],
-        dtype=torch.float32,
+    sleep_duration_tensor = (
+        torch.tensor(
+            [
+                (
+                    shumi_action.sleep_duration_min
+                    if shumi_action.sleep_duration_min is not None
+                    else 0
+                )
+            ],
+            dtype=torch.float32,
+        )
+        / sleep_duration_std
     )
-    since_prev_action_duration_min_tensor = torch.tensor(
-        [shumi_action.since_prev_action_duration.total_seconds() / 60],
-        dtype=torch.float32,
+    since_prev_action_duration_min_tensor = (
+        torch.tensor(
+            [shumi_action.since_prev_action_duration.total_seconds() / 60],
+            dtype=torch.float32,
+        )
+        / since_prev_action_duration_std
     )
     time = shumi_action.date_time.hour * 60.0 + shumi_action.date_time.minute
-    time_sin_tensor = torch.sin(torch.tensor([time / 1440.0]))
-    time_cos_tensor = torch.cos(torch.tensor([time / 1440.0]))
+    angle = 2 * math.pi * time / 1440.0
+    time_sin_tensor = torch.sin(torch.tensor([angle]))
+    time_cos_tensor = torch.cos(torch.tensor([angle]))
 
-    weeks_tensor = torch.tensor([shumi_action.days // 7], dtype=torch.float32)
+    weeks_tensor = torch.tensor([shumi_action.days / 7], dtype=torch.float32)
 
     tensor = torch.cat(
         [
@@ -237,8 +253,8 @@ def getData(
 
 head_num = 2
 embedding_size = 64
-block_num = 2
-block_size = 32
+block_num = 1
+block_size = 16
 batch_size = 40
 dropout_rate = 0.25
 train_x, train_y, test_x, test_y = getData(block_size)
@@ -300,7 +316,7 @@ class FeedForwardNN(nn.Module):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(embedding_size, 4 * embedding_size),
-            nn.ReLU(),
+            nn.GELU(),
             nn.Linear(4 * embedding_size, embedding_size),
             nn.Dropout(dropout_rate),
         )
@@ -387,7 +403,7 @@ class ShumiPatternModel(nn.Module):
 
     def head(self, input_dim: int, output_dim: int) -> nn.Sequential:
         return nn.Sequential(
-            nn.Linear(input_dim, round(input_dim**0.5)),
-            nn.ReLU(),
-            nn.Linear(round(input_dim**0.5), output_dim),
+            nn.Linear(input_dim, input_dim // 2),
+            nn.GELU(),
+            nn.Linear(input_dim // 2, output_dim),
         )

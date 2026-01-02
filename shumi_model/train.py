@@ -238,10 +238,10 @@ for iter in range(iterations + 1):
         + 0.2 * milk_amount_loss
         + 0.2 * daiper_loss
         + 0.2 * sleep_duration_loss
-        + 0.5 * since_prev_action_duration_loss
-        + 0.5 * time_sin_loss
-        + 0.5 * time_cos_loss
-        + 0.5 * weeks_loss
+        + 0.4 * since_prev_action_duration_loss
+        + 0.4 * time_sin_loss
+        + 0.4 * time_cos_loss
+        + 0.4 * weeks_loss
     )
     loss.backward()
     optimizer.step()

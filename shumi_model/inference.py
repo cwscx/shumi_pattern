@@ -3,13 +3,22 @@ import os
 import torch
 import torch.nn.functional as F
 from device import getDevice
-from model import ShumiPatternModel, getShumiActions, getActionEmbedding, block_size
+from model import (
+    ShumiPatternModel,
+    getShumiActions,
+    getActionEmbedding,
+    block_size,
+    since_prev_action_duration_std,
+    milk_amount_std,
+    sleep_duration_std,
+)
 from shumi_action import Action, MilkType, DaiperType, ShumiAction, BIRTHDAY
 
 device = getDevice()
 
+repetition_penalty = 2.0
 top_k = 2
-temperature = 1.0
+temperature = 0.8
 model = ShumiPatternModel()
 model.load_state_dict(
     torch.load(os.path.dirname(__file__) + "/shumi_pattern_model.pth")
@@ -38,7 +47,9 @@ def predict_next_actions(
             # Last block_size step penality.
             for i in range(1, block_size + 1):
                 last_action_type = actions[-i].action.value
-                action_logits[:, last_action_type] -= 10.0 * (1 / (i**0.8))
+                action_logits[:, last_action_type] -= repetition_penalty * (
+                    1 / (i**0.8)
+                )
             action_probs = F.softmax(action_logits / temperature, dim=-1)
             action_probs[:, 0] = 0  # Mask the unknown action type to 0 probability.
 
@@ -53,6 +64,7 @@ def predict_next_actions(
 
             since_prev_action_duration = round(
                 output["since_prev_action_duration"][:, -1, :].item()
+                * since_prev_action_duration_std
             )
 
             if action == Action.UNKNOWN_ACTION or since_prev_action_duration < 0:
@@ -80,10 +92,12 @@ def predict_next_actions(
             days = (new_event_datetime.date() - BIRTHDAY).days
 
             if action == Action.SLEEP:
-                sleep_duration = round(output["sleep_duration"][:, -1, :].item())
+                sleep_duration = round(
+                    output["sleep_duration"][:, -1, :].item() * sleep_duration_std
+                )
 
-                if sleep_duration < 0:
-                    print(f"unexpcted sleep duration {sleep_duration}")
+                if sleep_duration <= 0:
+                    print(f"Unexpected sleep duration {sleep_duration}.")
                     continue
 
                 predicted_action = ShumiAction(
@@ -112,11 +126,13 @@ def predict_next_actions(
                 milk_type = MilkType(milk_type_val)
                 probs["milk_type"] = milk_type_probs
 
-                milk_amount = round(output["milk_amount"][:, -1, :].item())
+                milk_amount = round(
+                    output["milk_amount"][:, -1, :].item() * milk_amount_std
+                )
 
-                if milk_type == MilkType.UNKNOWN_MILK_TYPE or milk_amount < 0:
+                if milk_type == MilkType.UNKNOWN_MILK_TYPE or milk_amount <= 0:
                     print(
-                        f"unexpected milk type {milk_type} or milk amount {milk_amount}"
+                        f"Unexpected milk type {milk_type} or milk amount {milk_amount}."
                     )
                     continue
 
@@ -147,6 +163,10 @@ def predict_next_actions(
                 ].item()
                 daiper_type = DaiperType(daiper_type_val)
                 probs["daiper_type"] = daiper_type_probs
+
+                if daiper_type == DaiperType.UNKNOWN_DAIPER_TYPE:
+                    print(f"Unexpected daiper type {daiper_type}.")
+                    continue
 
                 predicted_action = ShumiAction(
                     action=action,
