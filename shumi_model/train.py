@@ -35,8 +35,8 @@ def estimate_loss() -> list[str]:
             # "daiper": torch.zeros(10),
             # "sleep_duration": torch.zeros(10),
             "since_prev_action_duration": torch.zeros(10),
-            "time_hour": torch.zeros(10),
-            "time_minute": torch.zeros(10),
+            "time_sin": torch.zeros(10),
+            "time_cos": torch.zeros(10),
             "weeks": torch.zeros(10),
         }
         accuracies = {
@@ -75,11 +75,11 @@ def estimate_loss() -> list[str]:
                 outputs["since_prev_action_duration"][:, -1, :].view(-1),
                 yb[:, -1, 15].view(-1),
             )
-            time_hour_loss = l1_loss(
-                outputs["time_hour"][:, -1, :].view(-1), yb[:, -1, 16].view(-1)
+            time_sin_loss = l1_loss(
+                outputs["time_sin"][:, -1, :].view(-1), yb[:, -1, 16].view(-1)
             )
-            time_minute_loss = l1_loss(
-                outputs["time_minute"][:, -1, :].view(-1), yb[:, -1, 17].view(-1)
+            time_cos_loss = l1_loss(
+                outputs["time_cos"][:, -1, :].view(-1), yb[:, -1, 17].view(-1)
             )
             weeks_loss = l1_loss(
                 outputs["weeks"][:, -1, :].view(-1), yb[:, -1, 18].view(-1)
@@ -115,8 +115,8 @@ def estimate_loss() -> list[str]:
             losses["since_prev_action_duration"][
                 k
             ] += since_prev_action_duration_loss.item()
-            losses["time_hour"][k] += time_hour_loss.item()
-            losses["time_minute"][k] += time_minute_loss.item()
+            losses["time_sin"][k] += time_sin_loss.item()
+            losses["time_cos"][k] += time_cos_loss.item()
             losses["weeks"][k] += weeks_loss.item()
 
             accuracies["action"][k] += action_acc
@@ -136,8 +136,8 @@ def estimate_loss() -> list[str]:
         out[split]["since_prev_action_duration"] = (
             losses["since_prev_action_duration"].mean().item()
         )
-        out[split]["time_hour"] = losses["time_hour"].mean().item()
-        out[split]["time_minute"] = losses["time_minute"].mean().item()
+        out[split]["time_sin"] = losses["time_sin"].mean().item()
+        out[split]["time_cos"] = losses["time_cos"].mean().item()
         out[split]["weeks"] = losses["weeks"].mean().item()
 
     model.train()
@@ -183,12 +183,12 @@ for iter in range(iterations + 1):
         outputs["since_prev_action_duration"][:, -1, :].view(-1),
         yb[:, -1, 15].view(-1),
     )
-    time_hour_loss = l1_loss(
-        outputs["time_hour"][:, -1, :].view(-1),
+    time_sin_loss = l1_loss(
+        outputs["time_sin"][:, -1, :].view(-1),
         yb[:, -1, 16].view(-1),
     )
-    time_minute_loss = l1_loss(
-        outputs["time_minute"][:, -1, :].view(-1),
+    time_cos_loss = l1_loss(
+        outputs["time_cos"][:, -1, :].view(-1),
         yb[:, -1, 17].view(-1),
     )
     weeks_loss = l1_loss(outputs["weeks"][:, -1, :].view(-1), yb[:, -1, 18].view(-1))
@@ -200,8 +200,8 @@ for iter in range(iterations + 1):
         # + 0.6 * daiper_loss
         # + 0.6 * sleep_duration_loss
         + 0.6 * since_prev_action_duration_loss
-        + 0.6 * time_hour_loss
-        + 0.6 * time_minute_loss
+        + 0.6 * time_sin_loss
+        + 0.6 * time_cos_loss
         + 0.6 * weeks_loss
     )
     loss.backward()

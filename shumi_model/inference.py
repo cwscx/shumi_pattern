@@ -100,10 +100,7 @@ def predict_next_actions(
                 milk_type_probs = F.softmax(output["milk_type"][:, -1, :], dim=-1)
                 milk_type_val = torch.argmax(milk_type_probs).item()
                 milk_type = MilkType(milk_type_val)
-                milk_type_prob = round(
-                    milk_type_probs.squeeze()[torch.argmax(milk_type_probs)].item(), 4
-                )
-                probs["milk_type"] = milk_type_prob
+                probs["milk_type"] = milk_type_probs
 
                 milk_amount = round(output["milk_amount"][:, -1, :].item())
 
@@ -129,11 +126,7 @@ def predict_next_actions(
                 daiper_type_probs = F.softmax(output["daiper_type"][:, -1, :], dim=-1)
                 daiper_type_val = torch.argmax(daiper_type_probs).item()
                 daiper_type = DaiperType(daiper_type_val)
-                daiper_type_prob = round(
-                    daiper_type_probs.squeeze()[torch.argmax(daiper_type_probs)].item(),
-                    4,
-                )
-                probs["daiper_type"] = daiper_type_prob
+                probs["daiper_type"] = daiper_type_probs
 
                 predicted_action = ShumiAction(
                     action=action,

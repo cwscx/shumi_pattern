@@ -129,8 +129,8 @@ def getCounts() -> torch.Tensor:
 #   - Daiper Type (float, 5) [9:14]
 #   - Sleep Duration in minutes (float, 1) [14]
 #   - Since Previous Action Duration in minutes (float, 1) [15]
-#   - Time Hour (float, 1) [16]
-#   - Time Minute (float, 1) [17]
+#   - Time (HR:MIN) SIN (float, 1) [16]
+#   - Time (HR:MIN) COS (float, 1) [17]
 #   - Weeks (float, 1) [18]
 def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
     action_type_tensor = one_hot(shumi_action.action.value, len(Action))
@@ -168,10 +168,10 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
         [shumi_action.since_prev_action_duration.total_seconds() / 60],
         dtype=torch.float32,
     )
-    time_hour_tensor = torch.tensor([shumi_action.date_time.hour], dtype=torch.float32)
-    time_minute_tensor = torch.tensor(
-        [shumi_action.date_time.minute], dtype=torch.float32
-    )
+    time = shumi_action.date_time.hour * 60.0 + shumi_action.date_time.minute
+    time_sin_tensor = torch.sin(torch.tensor([time / 1440.0]))
+    time_cos_tensor = torch.cos(torch.tensor([time / 1440.0]))
+
     weeks_tensor = torch.tensor([shumi_action.days // 7], dtype=torch.float32)
 
     tensor = torch.cat(
@@ -182,8 +182,8 @@ def getActionEmbedding(shumi_action: ShumiAction) -> torch.Tensor:
             daiper_type_tensor,
             sleep_duration_tensor,
             since_prev_action_duration_min_tensor,
-            time_hour_tensor,
-            time_minute_tensor,
+            time_sin_tensor,
+            time_cos_tensor,
             weeks_tensor,
         ],
         dim=0,
@@ -348,8 +348,8 @@ class ShumiPatternModel(nn.Module):
         self.daiper_type_head = self.head(embedding_size, 5)
         self.sleep_duration_head = self.head(embedding_size, 1)
         self.since_prev_action_duration_head = self.head(embedding_size, 1)
-        self.time_hour_head = self.head(embedding_size, 1)
-        self.time_minute_head = self.head(embedding_size, 1)
+        self.time_sin_head = self.head(embedding_size, 1)
+        self.time_cos_head = self.head(embedding_size, 1)
         self.weeks_head = self.head(embedding_size, 1)
 
     def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -369,8 +369,8 @@ class ShumiPatternModel(nn.Module):
         since_prev_action_duration_outputs = self.since_prev_action_duration_head(
             embedding
         )
-        time_hour_outputs = self.time_hour_head(embedding)
-        time_minute_outputs = self.time_minute_head(embedding)
+        time_sin_outputs = self.time_sin_head(embedding)
+        time_cos_outputs = self.time_cos_head(embedding)
         weeks_outputs = self.weeks_head(embedding)
 
         return {
@@ -380,8 +380,8 @@ class ShumiPatternModel(nn.Module):
             "daiper_type": daiper_outputs,
             "sleep_duration": sleep_duration_outputs,
             "since_prev_action_duration": since_prev_action_duration_outputs,
-            "time_hour": time_hour_outputs,
-            "time_minute": time_minute_outputs,
+            "time_sin": time_sin_outputs,
+            "time_cos": time_cos_outputs,
             "weeks": weeks_outputs,
         }
 
