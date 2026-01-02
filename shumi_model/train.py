@@ -1,5 +1,6 @@
 import datetime
 import os
+import math
 import torch
 import torch.nn as nn
 from model import ShumiPatternModel, getBatchData, batch_size
@@ -69,7 +70,7 @@ def estimate_loss() -> tuple[list[str], dict[str, dict[str, float]]]:
                 outputs["milk_amount"][:, -1, :].view(-1),
                 yb[:, -1, 8].view(-1),
             )
-            milk_amount_loss = (milk_amount_loss * milk_loss).sum() / (
+            milk_amount_loss = (milk_amount_loss * milk_mask).sum() / (
                 milk_mask.sum().clamp_min(1.0)
             )
 
@@ -263,19 +264,18 @@ for iter in range(iterations + 1):
         )
 
         action_accuracy = out["val"]["action_acc"]
-        action_std = torch.std(
-            torch.tensor(
-                [
-                    out["val"]["drink_milk_recall"],
-                    out["val"]["sleep_recall"],
-                    out["val"]["change_daiper_recall"],
-                ]
-            )
+        action_accuracy_penalty = -math.log(max(action_accuracy, 1e-6))
+        min_action_recall = min(
+            out["val"]["drink_milk_recall"],
+            out["val"]["sleep_recall"],
+            out["val"]["change_daiper_recall"],
         )
-        loss += (
+        recall_pen = max(0.7 - min_action_recall, 0.0)
+
+        loss = (
             1.0 * out["val"]["action"]
-            + 1 / max(action_accuracy, 0.01)
-            + 3.0 * action_std
+            + action_accuracy_penalty
+            + 3.0 * recall_pen
             + 0.1 * out["val"]["milk"]
             + 0.1 * out["val"]["milk_amount"]
             + 0.1 * out["val"]["daiper"]
@@ -292,8 +292,8 @@ for iter in range(iterations + 1):
                 f"""
                 Save model at step {iter} with improved accuracy from {best_loss:.4f} to {loss:.4f}, where
                 action loss: {out["val"]["action"]}
-                action accuracy: {action_accuracy}
-                action recall std: {action_std}
+                action accuracy: {action_accuracy, action_accuracy_penalty}
+                min action recall: {min_action_recall}
                 milk type loss: {out["val"]["milk"]}
                 milk amount loss: {out["val"]["milk_amount"]}
                 daiper loss: {out["val"]["daiper"]}
