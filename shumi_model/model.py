@@ -238,7 +238,7 @@ def getData(
 head_num = 2
 embedding_size = 64
 block_num = 2
-block_size = 16
+block_size = 32
 batch_size = 40
 dropout_rate = 0.25
 train_x, train_y, test_x, test_y = getData(block_size)

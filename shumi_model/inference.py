@@ -8,6 +8,7 @@ from shumi_action import Action, MilkType, DaiperType, ShumiAction, BIRTHDAY
 
 device = getDevice()
 
+top_k = 2
 temperature = 1.0
 model = ShumiPatternModel()
 model.load_state_dict(
@@ -41,7 +42,7 @@ def predict_next_actions(
             action_probs = F.softmax(action_logits / temperature, dim=-1)
             action_probs[:, 0] = 0  # Mask the unknown action type to 0 probability.
 
-            action_topk_probs, action_topk_idx = torch.topk(action_probs, k=2)
+            action_topk_probs, action_topk_idx = torch.topk(action_probs, k=top_k)
 
             action_type_sample = torch.multinomial(action_topk_probs, num_samples=1)
             action_type_val = action_topk_idx.squeeze()[
@@ -97,8 +98,17 @@ def predict_next_actions(
                 )
                 predictions.append((predicted_action, probs))
             elif action == Action.DRINK_MILK:
-                milk_type_probs = F.softmax(output["milk_type"][:, -1, :], dim=-1)
-                milk_type_val = torch.argmax(milk_type_probs).item()
+                milk_logits = output["milk_type"][:, -1, :]
+                milk_type_probs = F.softmax(milk_logits / temperature, dim=-1)
+                milk_type_probs[:, 0] = (
+                    0  # Mask the unknown milk type to 0 probability.
+                )
+
+                milk_topk_probs, milk_topk_idx = torch.topk(milk_type_probs, k=top_k)
+                milk_type_sample = torch.multinomial(milk_topk_probs, num_samples=1)
+                milk_type_val = milk_topk_idx.squeeze()[
+                    milk_type_sample.squeeze()
+                ].item()
                 milk_type = MilkType(milk_type_val)
                 probs["milk_type"] = milk_type_probs
 
@@ -123,8 +133,18 @@ def predict_next_actions(
                 )
                 predictions.append((predicted_action, probs))
             elif action == Action.CHANGE_DAIPER:
-                daiper_type_probs = F.softmax(output["daiper_type"][:, -1, :], dim=-1)
-                daiper_type_val = torch.argmax(daiper_type_probs).item()
+                daiper_logits = output["daiper_type"][:, -1, :]
+                daiper_type_probs = F.softmax(daiper_logits / temperature, dim=-1)
+                daiper_type_probs[:, 0] = (
+                    0  # Mask the unknown daiper type to 0 probability.
+                )
+                daiper_topk_probs, daiper_topk_idx = torch.topk(
+                    daiper_type_probs, k=top_k
+                )
+                daiper_type_sample = torch.multinomial(daiper_topk_probs, num_samples=1)
+                daiper_type_val = daiper_topk_idx.squeeze()[
+                    daiper_type_sample.squeeze()
+                ].item()
                 daiper_type = DaiperType(daiper_type_val)
                 probs["daiper_type"] = daiper_type_probs
 
