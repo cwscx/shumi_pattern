@@ -10,7 +10,9 @@ from shumi_action import Action
 device = getDevice()
 print(f"Using device: {device}")
 
-iterations = 1000
+iterations = 2000
+eval_every_step = 100
+max_iter_wait = 8  # max iterations to wait if no improvement.
 
 model = ShumiPatternModel()
 model = model.to(device)
@@ -20,7 +22,7 @@ cross_entropy_loss = nn.CrossEntropyLoss(label_smoothing=0.02)
 
 
 @torch.no_grad()
-def estimate_loss() -> list[str]:
+def estimate_loss() -> tuple[list[str], dict[str, dict[str, float]]]:
     out = {
         "train": {},
         "val": {},
@@ -167,11 +169,14 @@ def estimate_loss() -> list[str]:
         for k2, v2 in v1.items():
             losses.append(f"  - {k2}: {v2:.4f}")
             print(losses[-1])
-    return losses
+    return losses, out
 
 
 train_time_start = datetime.datetime.now()
 train_time_prev = train_time_start
+
+best_loss = 1000
+best_loss_iter = 0
 
 for iter in range(iterations + 1):
     xb, yb = getBatchData("train", batch_size=batch_size)
@@ -246,8 +251,8 @@ for iter in range(iterations + 1):
     loss.backward()
     optimizer.step()
 
-    if iter % 200 == 0:
-        estimate_loss()
+    if iter % eval_every_step == 0:
+        losses, out = estimate_loss()
         train_time_now = datetime.datetime.now()
         elapsed = train_time_now - train_time_prev
         total_elapsed = train_time_now - train_time_start
@@ -257,5 +262,55 @@ for iter in range(iterations + 1):
             f"Elapsed time for last 1000 iters: {elapsed}, total elapsed time: {total_elapsed}"
         )
 
-# Save model.
-torch.save(model.state_dict(), os.path.dirname(__file__) + "/shumi_pattern_model.pth")
+        action_accuracy = out["val"]["action_acc"]
+        action_std = torch.std(
+            torch.tensor(
+                [
+                    out["val"]["drink_milk_recall"],
+                    out["val"]["sleep_recall"],
+                    out["val"]["change_daiper_recall"],
+                ]
+            )
+        )
+        loss += (
+            1.0 * out["val"]["action"]
+            + 1 / max(action_accuracy, 0.01)
+            + 3.0 * action_std
+            + 0.1 * out["val"]["milk"]
+            + 0.1 * out["val"]["milk_amount"]
+            + 0.1 * out["val"]["daiper"]
+            + 0.1 * out["val"]["sleep_duration"]
+            + 0.2 * out["val"]["since_prev_action_duration"]
+            + 0.2 * out["val"]["time_sin"]
+            + 0.2 * out["val"]["time_cos"]
+            + 0.2 * out["val"]["weeks"]
+        )
+
+        improved = loss < (best_loss + 1e-4)  # 1e-4 防抖
+        if improved:
+            print(
+                f"""
+                Save model at step {iter} with improved accuracy from {best_loss:.4f} to {loss:.4f}, where
+                action loss: {out["val"]["action"]}
+                action accuracy: {action_accuracy}
+                action recall std: {action_std}
+                milk type loss: {out["val"]["milk"]}
+                milk amount loss: {out["val"]["milk_amount"]}
+                daiper loss: {out["val"]["daiper"]}
+                sleep duration loss: {out["val"]["sleep_duration"]}
+                since prev action loss: {out["val"]["since_prev_action_duration"]}
+                time sin loss: {out["val"]["time_sin"]}
+                time cos loss: {out["val"]["time_cos"]}
+                weeks loss: {out["val"]["weeks"]}
+                """
+            )
+            best_loss = loss
+            best_loss_iter = iter
+
+            torch.save(
+                model.state_dict(),
+                os.path.dirname(__file__) + "/shumi_pattern_model.pth",
+            )
+        # Early break if no obvious improvement.
+        elif iter - best_loss_iter >= max_iter_wait * eval_every_step:
+            break
