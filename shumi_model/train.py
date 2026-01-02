@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from model import ShumiPatternModel, getBatchData, batch_size
 from device import getDevice
+from shumi_action import Action
 
 
 device = getDevice()
@@ -30,10 +31,10 @@ def estimate_loss() -> list[str]:
     for split in ["train", "val"]:
         losses = {
             "action": torch.zeros(10),
-            # "milk": torch.zeros(10),
-            # "milk_amount": torch.zeros(10),
-            # "daiper": torch.zeros(10),
-            # "sleep_duration": torch.zeros(10),
+            "milk": torch.zeros(10),
+            "milk_amount": torch.zeros(10),
+            "daiper": torch.zeros(10),
+            "sleep_duration": torch.zeros(10),
             "since_prev_action_duration": torch.zeros(10),
             "time_sin": torch.zeros(10),
             "time_cos": torch.zeros(10),
@@ -50,27 +51,44 @@ def estimate_loss() -> list[str]:
             xb = xb.to(device)
             yb = yb.to(device)
             outputs = model(xb)
+            action_target = yb[:, -1, 0:4].argmax(dim=-1)
             action_loss = cross_entropy_loss(
                 outputs["action_type"][:, -1, 0:4].view(-1, 4),
-                yb[:, -1, 0:4].argmax(dim=-1).view(-1),
+                action_target.view(-1),
             )
 
-            # milk_loss = cross_entropy_loss(
-            #     outputs["milk_type"].view(-1, 4),
-            #     yb[:, :, 4:8].argmax(dim=-1).view(-1),
-            # )
-            # milk_amount_loss = l1_loss(
-            #     outputs["milk_amount"].view(-1),
-            #     yb[:, :, 8].view(-1),
-            # )
-            # daiper_loss = cross_entropy_loss(
-            #     outputs["daiper_type"].view(-1, 5),
-            #     yb[:, :, 9:14].argmax(dim=-1).view(-1),
-            # )
-            # sleep_duration_loss = l1_loss(
-            #     outputs["sleep_duration"].view(-1),
-            #     yb[:, :, 14].view(-1),
-            # )
+            milk_mask = (action_target == Action.DRINK_MILK.value).float()
+            milk_loss = cross_entropy_loss(
+                outputs["milk_type"][:, -1, :].view(-1, 4),
+                yb[:, -1, 4:8].argmax(dim=-1).view(-1),
+            )
+            milk_loss = (milk_loss * milk_mask).sum() / (milk_mask.sum().clamp_min(1.0))
+            milk_amount_loss = l1_loss(
+                outputs["milk_amount"][:, -1, :].view(-1),
+                yb[:, -1, 8].view(-1),
+            )
+            milk_amount_loss = (milk_amount_loss * milk_loss).sum() / (
+                milk_mask.sum().clamp_min(1.0)
+            )
+
+            daiper_mask = (action_target == Action.CHANGE_DAIPER.value).float()
+            daiper_loss = cross_entropy_loss(
+                outputs["daiper_type"][:, -1, :].view(-1, 5),
+                yb[:, -1, 9:14].argmax(dim=-1).view(-1),
+            )
+            daiper_loss = (daiper_loss * daiper_mask).sum() / (
+                daiper_mask.sum().clamp_min(1.0)
+            )
+
+            sleep_mask = (action_target == Action.SLEEP.value).float()
+            sleep_duration_loss = l1_loss(
+                outputs["sleep_duration"][:, -1, :].view(-1),
+                yb[:, -1, 14].view(-1),
+            )
+            sleep_duration_loss = (sleep_duration_loss * sleep_mask).sum() / (
+                sleep_mask.sum().clamp_min(1.0)
+            )
+
             since_prev_action_duration_loss = l1_loss(
                 outputs["since_prev_action_duration"][:, -1, :].view(-1),
                 yb[:, -1, 15].view(-1),
@@ -108,10 +126,10 @@ def estimate_loss() -> list[str]:
                     accuracies["change_daiper_recall"][k] += recall
 
             losses["action"][k] += action_loss.item()
-            # losses["milk"][k] += milk_loss.item()
-            # losses["milk_amount"][k] += milk_amount_loss.item()
-            # losses["daiper"][k] += daiper_loss.item()
-            # losses["sleep_duration"][k] += sleep_duration_loss.item()
+            losses["milk"][k] += milk_loss.item()
+            losses["milk_amount"][k] += milk_amount_loss.item()
+            losses["daiper"][k] += daiper_loss.item()
+            losses["sleep_duration"][k] += sleep_duration_loss.item()
             losses["since_prev_action_duration"][
                 k
             ] += since_prev_action_duration_loss.item()
@@ -129,10 +147,10 @@ def estimate_loss() -> list[str]:
             accuracies["change_daiper_recall"].mean().item()
         )
 
-        # out[split]["milk"] = losses["milk"].mean().item()
-        # out[split]["milk_amount"] = losses["milk_amount"].mean().item()
-        # out[split]["daiper"] = losses["daiper"].mean().item()
-        # out[split]["sleep_duration"] = losses["sleep_duration"].mean().item()
+        out[split]["milk"] = losses["milk"].mean().item()
+        out[split]["milk_amount"] = losses["milk_amount"].mean().item()
+        out[split]["daiper"] = losses["daiper"].mean().item()
+        out[split]["sleep_duration"] = losses["sleep_duration"].mean().item()
         out[split]["since_prev_action_duration"] = (
             losses["since_prev_action_duration"].mean().item()
         )
@@ -161,24 +179,45 @@ for iter in range(iterations + 1):
     yb = yb.to(device)
     optimizer.zero_grad(set_to_none=True)
     outputs = model(xb)
+    action_target = yb[:, -1, 0:4].argmax(dim=-1)
     action_loss = cross_entropy_loss(
-        outputs["action_type"][:, -1, :].view(-1, 4),
-        yb[:, -1, 0:4].argmax(dim=-1).view(-1),
+        outputs["action_type"][:, -1, :].view(-1, 4), action_target.view(-1)
     )
-    # milk_loss = cross_entropy_loss(
-    #     outputs["milk_type"].view(-1, 4), yb[:, :, 4:8].argmax(dim=-1).view(-1)
-    # )
-    # milk_amount_loss = l1_loss(
-    #     outputs["milk_amount"].view(-1),
-    #     yb[:, :, 8].view(-1),
-    # )
-    # daiper_loss = cross_entropy_loss(
-    #     outputs["daiper_type"].view(-1, 5), yb[:, :, 9:14].argmax(dim=-1).view(-1)
-    # )
-    # sleep_duration_loss = l1_loss(
-    #     outputs["sleep_duration"].view(-1),
-    #     yb[:, :, 14].view(-1),
-    # )
+
+    # Only calculate milk loss if the type is drink milk.
+    milk_mask = (action_target == Action.DRINK_MILK.value).float()
+    milk_loss = cross_entropy_loss(
+        outputs["milk_type"][:, -1, :].view(-1, 4),
+        yb[:, -1, 4:8].argmax(dim=-1).view(-1),
+    )
+    milk_loss = (milk_loss * milk_mask).sum() / (milk_mask.sum().clamp_min(1.0))
+    milk_amount_loss = l1_loss(
+        outputs["milk_amount"][:, -1, :].view(-1),
+        yb[:, -1, 8].view(-1),
+    )
+    milk_amount_loss = (milk_amount_loss * milk_mask).sum() / (
+        milk_mask.sum().clamp_min(1.0)
+    )
+
+    # Only calculate diaper loss if the type is change daiper.
+    daiper_mask = (action_target == Action.CHANGE_DAIPER.value).float()
+    daiper_loss = cross_entropy_loss(
+        outputs["daiper_type"][:, -1, :].view(-1, 5),
+        yb[:, -1, 9:14].argmax(dim=-1).view(-1),
+    )
+    daiper_loss = (daiper_loss * daiper_mask).sum() / (daiper_mask.sum().clamp_min(1.0))
+
+    # Only calculate sleep loss if the type is sleep.
+    sleep_mask = (action_target == Action.SLEEP.value).float()
+    sleep_duration_loss = l1_loss(
+        outputs["sleep_duration"][:, -1, :].view(-1),
+        yb[:, -1, 14].view(-1),
+    )
+    sleep_duration_loss = (sleep_duration_loss * sleep_mask).sum() / (
+        sleep_mask.sum().clamp_min(1.0)
+    )
+
+    # Time feature losses are always calculated.
     since_prev_action_duration_loss = l1_loss(
         outputs["since_prev_action_duration"][:, -1, :].view(-1),
         yb[:, -1, 15].view(-1),
@@ -195,14 +234,14 @@ for iter in range(iterations + 1):
 
     loss = (
         1.0 * action_loss
-        # + 0.6 * milk_loss
-        # + 0.6 * milk_amount_loss
-        # + 0.6 * daiper_loss
-        # + 0.6 * sleep_duration_loss
-        + 0.6 * since_prev_action_duration_loss
-        + 0.6 * time_sin_loss
-        + 0.6 * time_cos_loss
-        + 0.6 * weeks_loss
+        + 0.2 * milk_loss
+        + 0.2 * milk_amount_loss
+        + 0.2 * daiper_loss
+        + 0.2 * sleep_duration_loss
+        + 0.5 * since_prev_action_duration_loss
+        + 0.5 * time_sin_loss
+        + 0.5 * time_cos_loss
+        + 0.5 * weeks_loss
     )
     loss.backward()
     optimizer.step()
