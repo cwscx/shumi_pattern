@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import math
 import torch
@@ -11,9 +12,9 @@ from shumi_action import Action
 device = getDevice()
 print(f"Using device: {device}")
 
-iterations = 2000
+iterations = 10000
 eval_every_step = 100
-max_iter_wait = 8  # max iterations to wait if no improvement.
+max_iter_wait = 15  # max iterations to wait if no improvement.
 
 model = ShumiPatternModel()
 model = model.to(device)
@@ -178,6 +179,15 @@ train_time_prev = train_time_start
 
 best_loss = 1000
 best_loss_iter = 0
+model_metadata = {}
+
+with open(
+    os.path.dirname(__file__) + "/model.json",
+    "r",
+) as file:
+    # Use json.load() to deserialize the file object into a Python dictionary
+    model_metadata = json.load(file)
+    best_loss = model_metadata["best_loss_score"]
 
 for iter in range(iterations + 1):
     xb, yb = getBatchData("train", batch_size=batch_size)
@@ -311,6 +321,16 @@ for iter in range(iterations + 1):
                 model.state_dict(),
                 os.path.dirname(__file__) + "/shumi_pattern_model.pth",
             )
+
+            with open(
+                os.path.dirname(__file__) + "/model.json",
+                "w",
+            ) as file:
+                model_metadata["best_loss_score"] = best_loss
+                json.dump(model_metadata, file, indent=4)
+
         # Early break if no obvious improvement.
         elif iter - best_loss_iter >= max_iter_wait * eval_every_step:
             break
+        else:
+            print(f"loss is {loss}.")
