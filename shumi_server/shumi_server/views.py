@@ -6,6 +6,7 @@ from datetime import datetime
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from inference import predict_next_actions
 
 # Path to your JSON file
 JSON_FILE_PATH = os.path.join(os.path.dirname(__file__), 'shumi.json')
