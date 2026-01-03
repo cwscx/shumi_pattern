@@ -9,3 +9,5 @@ python3 -m pip install google
 python3 -m pip install google-api-python-client 
 python3 -m pip install google-genai
 python3 -m pip install torch
+
+python3 -m pip install -e shumi_model  ## Install local shumi model module.
