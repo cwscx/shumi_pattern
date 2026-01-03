@@ -1,15 +1,24 @@
 import datetime
 import os
-import os
 import torch
 import torch.nn.functional as F
 from device import getDevice
-from model import ShumiPatternModel, getShumiActions, getActionEmbedding, block_size
+from model import (
+    ShumiPatternModel,
+    getShumiActions,
+    getActionEmbedding,
+    block_size,
+    since_prev_action_duration_std,
+    milk_amount_std,
+    sleep_duration_std,
+)
 from shumi_action import Action, MilkType, DaiperType, ShumiAction, BIRTHDAY
 
 device = getDevice()
 
-temperature = 1.0
+repetition_penalty = 2.0
+top_k = 2
+temperature = 0.8
 model = ShumiPatternModel()
 model.load_state_dict(
     torch.load(os.path.dirname(__file__) + "/shumi_pattern_model.pth")
@@ -38,11 +47,13 @@ def predict_next_actions(
             # Last block_size step penality.
             for i in range(1, block_size + 1):
                 last_action_type = actions[-i].action.value
-                action_logits[:, last_action_type] -= 10.0 * (1 / (i**0.8))
+                action_logits[:, last_action_type] -= repetition_penalty * (
+                    1 / (i**0.8)
+                )
             action_probs = F.softmax(action_logits / temperature, dim=-1)
             action_probs[:, 0] = 0  # Mask the unknown action type to 0 probability.
 
-            action_topk_probs, action_topk_idx = torch.topk(action_probs, k=2)
+            action_topk_probs, action_topk_idx = torch.topk(action_probs, k=top_k)
 
             action_type_sample = torch.multinomial(action_topk_probs, num_samples=1)
             action_type_val = action_topk_idx.squeeze()[
@@ -53,6 +64,7 @@ def predict_next_actions(
 
             since_prev_action_duration = round(
                 output["since_prev_action_duration"][:, -1, :].item()
+                * since_prev_action_duration_std
             )
 
             if action == Action.UNKNOWN_ACTION or since_prev_action_duration < 0:
@@ -80,10 +92,12 @@ def predict_next_actions(
             days = (new_event_datetime.date() - BIRTHDAY).days
 
             if action == Action.SLEEP:
-                sleep_duration = round(output["sleep_duration"][:, -1, :].item())
+                sleep_duration = round(
+                    output["sleep_duration"][:, -1, :].item() * sleep_duration_std
+                )
 
-                if sleep_duration < 0:
-                    print(f"unexpcted sleep duration {sleep_duration}")
+                if sleep_duration <= 0:
+                    print(f"Unexpected sleep duration {sleep_duration}.")
                     continue
 
                 predicted_action = ShumiAction(
@@ -98,19 +112,27 @@ def predict_next_actions(
                 )
                 predictions.append((predicted_action, probs))
             elif action == Action.DRINK_MILK:
-                milk_type_probs = F.softmax(output["milk_type"][:, -1, :], dim=-1)
-                milk_type_val = torch.argmax(milk_type_probs).item()
-                milk_type = MilkType(milk_type_val)
-                milk_type_prob = round(
-                    milk_type_probs.squeeze()[torch.argmax(milk_type_probs)].item(), 4
+                milk_logits = output["milk_type"][:, -1, :]
+                milk_type_probs = F.softmax(milk_logits / temperature, dim=-1)
+                milk_type_probs[:, 0] = (
+                    0  # Mask the unknown milk type to 0 probability.
                 )
-                probs["milk_type"] = milk_type_prob
 
-                milk_amount = round(output["milk_amount"][:, -1, :].item())
+                milk_topk_probs, milk_topk_idx = torch.topk(milk_type_probs, k=top_k)
+                milk_type_sample = torch.multinomial(milk_topk_probs, num_samples=1)
+                milk_type_val = milk_topk_idx.squeeze()[
+                    milk_type_sample.squeeze()
+                ].item()
+                milk_type = MilkType(milk_type_val)
+                probs["milk_type"] = milk_type_probs
 
-                if milk_type == MilkType.UNKNOWN_MILK_TYPE or milk_amount < 0:
+                milk_amount = round(
+                    output["milk_amount"][:, -1, :].item() * milk_amount_std
+                )
+
+                if milk_type == MilkType.UNKNOWN_MILK_TYPE or milk_amount <= 0:
                     print(
-                        f"unexpected milk type {milk_type} or milk amount {milk_amount}"
+                        f"Unexpected milk type {milk_type} or milk amount {milk_amount}."
                     )
                     continue
 
@@ -127,14 +149,24 @@ def predict_next_actions(
                 )
                 predictions.append((predicted_action, probs))
             elif action == Action.CHANGE_DAIPER:
-                daiper_type_probs = F.softmax(output["daiper_type"][:, -1, :], dim=-1)
-                daiper_type_val = torch.argmax(daiper_type_probs).item()
-                daiper_type = DaiperType(daiper_type_val)
-                daiper_type_prob = round(
-                    daiper_type_probs.squeeze()[torch.argmax(daiper_type_probs)].item(),
-                    4,
+                daiper_logits = output["daiper_type"][:, -1, :]
+                daiper_type_probs = F.softmax(daiper_logits / temperature, dim=-1)
+                daiper_type_probs[:, 0] = (
+                    0  # Mask the unknown daiper type to 0 probability.
                 )
-                probs["daiper_type"] = daiper_type_prob
+                daiper_topk_probs, daiper_topk_idx = torch.topk(
+                    daiper_type_probs, k=top_k
+                )
+                daiper_type_sample = torch.multinomial(daiper_topk_probs, num_samples=1)
+                daiper_type_val = daiper_topk_idx.squeeze()[
+                    daiper_type_sample.squeeze()
+                ].item()
+                daiper_type = DaiperType(daiper_type_val)
+                probs["daiper_type"] = daiper_type_probs
+
+                if daiper_type == DaiperType.UNKNOWN_DAIPER_TYPE:
+                    print(f"Unexpected daiper type {daiper_type}.")
+                    continue
 
                 predicted_action = ShumiAction(
                     action=action,

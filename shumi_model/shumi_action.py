@@ -82,11 +82,11 @@ class ShumiAction:
     def __str__(self) -> str:
         time_str = f"Day {self.days} on {self.date_time.date()}, Time {self.date_time.hour:02d}:{self.date_time.minute:02d}, {self.since_prev_action_duration} since last action"
         if self.action == Action.DRINK_MILK:
-            return f"{time_str}, Action: Drink Milk({Action.DRINK_MILK.value}), Type: {self.milk_type}, Amount: {self.milk_amount} ml"
+            return f"{time_str}, Action: Drink Milk({Action.DRINK_MILK.value}), Type: {self.milk_type}({self.milk_type.value if self.milk_type else 0}), Amount: {self.milk_amount} ml"
         elif self.action == Action.SLEEP:
             return f"{time_str}, Action: Sleep({Action.SLEEP.value}), Duration: {self.sleep_duration_min} minutes"
         elif self.action == Action.CHANGE_DAIPER:
-            return f"{time_str}, Action: Change Daiper({Action.CHANGE_DAIPER.value}), Type: {self.daiper_type}"
+            return f"{time_str}, Action: Change Daiper({Action.CHANGE_DAIPER.value}), Type: {self.daiper_type}({self.daiper_type.value if self.daiper_type else 0})"
         else:
             return "Unknown Action"
 
