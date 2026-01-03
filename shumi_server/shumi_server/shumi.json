@@ -4,6 +4,329 @@
     "sex": "female",
     "patterns": [
         {
+            "date": "2025/12/15",
+            "actions": [
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "130ml",
+                    "time_start": "00:01"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "00:11",
+                    "time_end": "06:48"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "125ml",
+                    "time_start": "07:10"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "08:19",
+                    "time_end": "09:04"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "09:54"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "120ml",
+                    "time_start": "10:02"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "10:51",
+                    "time_end": "13:10"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "90ml",
+                    "time_start": "13:34"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "14:41",
+                    "time_end": "15:44"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "亲喂母乳",
+                    "volume": "50ml",
+                    "time_start": "16:07"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "35ml",
+                    "time_start": "16:30"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "16:35"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "17:25",
+                    "time_end": "19:10"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "19:38"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "130ml",
+                    "time_start": "19:41"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "20:53",
+                    "time_end": "23:41"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "23:41"
+                }
+            ]
+        },
+        {
+            "date": "2025/12/16",
+            "actions": [
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "110ml",
+                    "time_start": "00:01"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "00:06",
+                    "time_end": "06:25"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "臭臭+嘘嘘",
+                    "time_start": "06:37"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "130ml",
+                    "time_start": "06:55"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "08:05",
+                    "time_end": "08:59"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "09:24"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "130ml",
+                    "time_start": "09:34"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "10:48",
+                    "time_end": "12:29"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "130ml",
+                    "time_start": "13:00"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "13:10"
+                },
+                
+                {
+                    "action": "睡眠",
+                    "time_start": "14:46",
+                    "time_end": "15:40"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "15:45"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "亲喂母乳",
+                    "volume": "30ml",
+                    "time_start": "15:47"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "65ml",
+                    "time_start": "16:17"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "17:20",
+                    "time_end": "19:02"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "130ml",
+                    "time_start": "19:25"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "19:32"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "20:21"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "20:59",
+                    "time_end": "23:40"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "23:40"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "70ml",
+                    "time_start": "23:56"
+                }
+            ]
+        },
+        {
+            "date": "2025/12/17",
+            "actions": [
+                {
+                    "action": "睡眠",
+                    "time_start": "00:04",
+                    "time_end": "06:08"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "06:19"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "130ml",
+                    "time_start": "06:48"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "07:15",
+                    "time_end": "08:11"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "09:09"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "115ml",
+                    "time_start": "09:15"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "10:07",
+                    "time_end": "12:17"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "12:41"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "130ml",
+                    "time_start": "12:43"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "14:14",
+                    "time_end": "16:07"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "16:15"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "亲喂母乳",
+                    "volume": "20ml",
+                    "time_start": "16:17"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "120ml",
+                    "time_start": "17:00"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "17:45",
+                    "time_end": "19:10"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "瓶喂母乳",
+                    "volume": "120ml",
+                    "time_start": "19:41"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "19:43"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "20:49",
+                    "time_end": "23:41"
+                },
+                {
+                    "action": "换尿布",
+                    "type": "嘘嘘",
+                    "time_start": "23:41"
+                },
+                {
+                    "action": "喝奶",
+                    "type": "配方奶",
+                    "volume": "100ml",
+                    "time_start": "23:57"
+                }
+            ]
+        },
+        {
             "date": "2025/12/18",
             "actions": [
                 {
