@@ -1478,7 +1478,7 @@
                 },
                 {
                     "action": "换尿布",
-                    "time_start": "16:00",
+                    "time_start": "17:00",
                     "type": "嘘嘘"
                 },
                 {
@@ -1543,12 +1543,17 @@
                 {
                     "action": "睡眠",
                     "time_start": "00:03",
-                    "time_end": "06:56"
+                    "time_end": "03:32"
                 },
                 {
                     "action": "换尿布",
                     "time_start": "03:33",
                     "type": "嘘嘘"
+                },
+                {
+                    "action": "睡眠",
+                    "time_start": "03:34",
+                    "time_end": "06:56"
                 },
                 {
                     "action": "换尿布",

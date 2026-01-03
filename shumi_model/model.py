@@ -268,7 +268,7 @@ def getBatchData(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     if split == "train":
         x, y = train_x, train_y
-    else:   
+    else:
         x, y = test_x, test_y
     indices = torch.randint(len(x), (batch_size,))
     return x[indices], y[indices]

@@ -274,7 +274,7 @@ for iter in range(iterations + 1):
 
         loss = (
             1.0 * out["val"]["action"]
-            + action_accuracy_penalty
+            + 2.0 * action_accuracy_penalty
             + 3.0 * recall_pen
             + 0.1 * out["val"]["milk"]
             + 0.1 * out["val"]["milk_amount"]

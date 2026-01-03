@@ -91,6 +91,11 @@ def predict_next_actions(
                 )
             days = (new_event_datetime.date() - BIRTHDAY).days
 
+            print(new_event_datetime, last_event_datetime)
+            if new_event_datetime <= last_event_datetime:
+                print(f"Invalid timestamp {new_event_datetime}")
+                continue
+
             if action == Action.SLEEP:
                 sleep_duration = round(
                     output["sleep_duration"][:, -1, :].item() * sleep_duration_std
