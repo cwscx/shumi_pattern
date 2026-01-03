@@ -6,7 +6,6 @@ from datetime import datetime
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from shumi_model.inference import predict_next_actions
 
 # Path to your JSON file
 JSON_FILE_PATH = os.path.join(os.path.dirname(__file__), 'shumi.json')
@@ -256,11 +255,6 @@ def isWithinTimeWindow(timeWindowHour, time1, time2):
 #     except Exception as e:
 #         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-@csrf_exempt
-def get_model_predictions(request):
-    next_actions = predict_next_actions(num_of_actions=3)
-    print(next_actions)
-
 
 @csrf_exempt
 def get_gemini_insights(request):
@@ -342,8 +336,6 @@ def get_gemini_insights(request):
 @csrf_exempt
 def get_prediction(request):
     # Case 1: Handle if the request is NOT a POST
-    print("*********")
-    print(request.method)
     if request.method != 'POST':
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
 
