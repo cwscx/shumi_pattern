@@ -60,7 +60,7 @@ def predict_next_actions(
                 action_type_sample.squeeze()
             ].item()
             action = Action(action_type_val)
-            probs["action_type"] = action_probs
+            probs["action_type"] = action_probs.squeeze()
 
             since_prev_action_duration = round(
                 output["since_prev_action_duration"][:, -1, :].item()
@@ -129,7 +129,7 @@ def predict_next_actions(
                     milk_type_sample.squeeze()
                 ].item()
                 milk_type = MilkType(milk_type_val)
-                probs["milk_type"] = milk_type_probs
+                probs["milk_type"] = milk_type_probs.squeeze()
 
                 milk_amount = round(
                     output["milk_amount"][:, -1, :].item() * milk_amount_std
@@ -167,7 +167,7 @@ def predict_next_actions(
                     daiper_type_sample.squeeze()
                 ].item()
                 daiper_type = DaiperType(daiper_type_val)
-                probs["daiper_type"] = daiper_type_probs
+                probs["daiper_type"] = daiper_type_probs.squeeze()
 
                 if daiper_type == DaiperType.UNKNOWN_DAIPER_TYPE:
                     print(f"Unexpected daiper type {daiper_type}.")

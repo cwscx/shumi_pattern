@@ -343,7 +343,7 @@ def get_gemini_insights(request):
         if not user_query:
             task_prompt = """
             User has not asked a specific question. Please provide a general report:
-            1. 预测接下来的动作及时间区间（含置信度）。
+            1. 预测接下来的动作及时间区间（含置信度）。请与本地模型的预测比较并总结。
             2. 简要总结过去3天的整体表现。
             3. 分析长期的喂奶、睡眠和尿布规律。
             """
@@ -376,6 +376,13 @@ def get_prediction(request):
             {"status": "error", "message": "Invalid request method"}, status=400
         )
 
+    next_actions = predict_next_actions(50)
+    predictions = ""
+    for next_action in next_actions:
+        prob = next_action[1]["action_type"][next_action[0].action.value]
+        predictions += f"{next_action[0]} with probablity {prob * 100:.2f}%\n"
+    print(predictions)
+
     try:
         # Load the file
         if not os.path.exists(JSON_FILE_PATH):
@@ -392,7 +399,7 @@ def get_prediction(request):
 
         prompt = f"""
         基于施舒米的信息 {basic_info} 和作息 {patterns}。
-        当前时间 {current_time}。
+        当前时间 {current_time}，如果作息记录严重确实，请使用本地模型推测的数据来推断：{patterns}。
         
         请预测下一个动作，并给出你对此预测的信心指数（0-100%）。
         输出格式：
