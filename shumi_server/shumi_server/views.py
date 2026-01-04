@@ -399,7 +399,7 @@ def get_prediction(request):
 
         prompt = f"""
         基于施舒米的信息 {basic_info} 和作息 {patterns}。
-        当前时间 {current_time}，如果作息记录严重确实，请使用本地模型推测的数据来推断：{patterns}。
+        当前时间 {current_time}，如果作息记录严重缺失，请使用本地模型推测的数据来推断：{patterns}。
         
         请预测下一个动作，并给出你对此预测的信心指数（0-100%）。
         输出格式：
