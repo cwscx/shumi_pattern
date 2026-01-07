@@ -127,78 +127,103 @@ def get_gemini_insights(request):
 
 @csrf_exempt
 def get_prediction(request):
-    # Case 1: Handle if the request is NOT a POST
     if request.method != "POST":
         return JsonResponse(
-            {"status": "error", "message": "Invalid request method"}, status=400
+            {"status": "error", "message": "Only POST allowed"}, status=405
         )
 
-    next_actions = predict_next_actions(50)
-    predictions = ""
-    for next_action in next_actions:
-        prob = next_action[1]["action_type"][next_action[0].action.value]
-        predictions += f"{next_action[0]} with probablity {prob * 100:.2f}%\n"
-    print(predictions)
-
     try:
-        # Load the file
-        if not os.path.exists(JSON_FILE_PATH):
+        # 2. Parse request body
+        body = json.loads(request.body) if request.body else {}
+        use_local = body.get("useLocalModel", False)
+
+        # 3. Handle Local Model Logic
+        local_model_output = ""
+        if use_local:
+            try:
+                # Assuming predict_next_actions is imported/defined
+                next_actions = predict_next_actions(50)
+                for next_action in next_actions:
+                    # Accessing the action and probability
+                    action_obj = next_action[0]
+                    prob = next_action[1]["action_type"][action_obj.action.value]
+                    local_model_output += f"{action_obj} with probability {prob * 100:.2f}%\n"
+            except Exception as e:
+                local_model_output = f"Error running local model: {str(e)}"
+
+        # 4. Resolve JSON Path using Django Settings
+        # This fixes the "file not found" error in modular views
+        json_path = os.path.join(settings.BASE_DIR, "shumi_server", "shumi.json")
+        
+        if not os.path.exists(json_path):
             return JsonResponse(
-                {"status": "error", "message": "Data file not found"}, status=404
+                {"status": "error", "message": f"Data file not found at {json_path}"}, status=404
             )
 
-        with open(JSON_FILE_PATH, "r", encoding="utf-8") as file:
+        with open(json_path, "r", encoding="utf-8") as file:
             db = json.load(file)
 
         basic_info = db.get("info", {})
-        patterns = db.get("patterns", [])
-        current_time = datetime.now()
+        # Send only the last few days to Gemini to avoid context overload
+        recent_patterns = db.get("patterns", [])[-5:] 
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
+        # 5. Construct Prompt (Fixed variable names)
         prompt = f"""
-        基于施舒米的信息 {basic_info} 和作息 {patterns}。
-        当前时间 {current_time}，如果作息记录严重缺失，请混合使用本地模型推测的数据来推断：{predictions}。
+        你是一位资深育儿专家。请根据以下数据进行预判。
         
-        请预测下一个动作，并给出你对此预测的信心指数（0-100%）。
-        输出格式：
-        CONFIDENCE: [数字]
-        PREDICTION: [动作] [时间]
-        REASONING: [推理]
+        [系统状态]
+        本地模型内核: {'开启' if use_local else '关闭'}
+        本地模型原始输出: {local_model_output if local_model_output else '无'}
+        当前时间: {current_time} (PST)
+
+        [背景数据]
+        舒米信息: {basic_info}
+        最近作息记录: {recent_patterns}
+
+        [分析要求]
+        1. 如果作息记录缺失，请优先参考“本地模型原始输出”。
+        2. 遵守以下睡眠逻辑：清醒时间小于1小时的小觉应视为断断续续的同一个觉；凌晨为了喂奶换尿布的清醒不算作正式起夜。
+        3. 给出准确的信心指数。
+
+        [输出格式]
+        CONFIDENCE: [0-100的数字]
+        PREDICTION: [动作] [预判时间点]
+        REASONING: [简洁的中文推理]
         """
 
+        # 6. Call Gemini
         response = client.models.generate_content(
-            model="gemini-2.5-flash", contents=prompt
+            model="gemini-2.5-flash", 
+            contents=prompt
         )
         full_text = response.text
 
-        # Default values
+        # 7. Robust Parsing
         confidence = 70
-        prediction = "信号不准"
-        reasoning = "无法获取推理"
+        prediction = "信号捕捉中"
+        reasoning = "推理生成中"
 
-        # Parsing
-        if "CONFIDENCE:" in full_text:
-            conf_match = re.search(r"CONFIDENCE:\s*(\d+)", full_text)
-            if conf_match:
-                confidence = conf_match.group(1)
+        # Extract Confidence
+        conf_match = re.search(r"CONFIDENCE:\s*(\d+)", full_text)
+        if conf_match:
+            confidence = int(conf_match.group(1))
 
+        # Extract Prediction
         if "PREDICTION:" in full_text:
-            prediction = (
-                full_text.split("PREDICTION:")[1].split("REASONING:")[0].strip()
-            )
+            parts = full_text.split("PREDICTION:")[1].split("REASONING:")
+            prediction = parts[0].strip()
+            if len(parts) > 1:
+                reasoning = parts[1].strip()
 
-        if "REASONING:" in full_text:
-            reasoning = full_text.split("REASONING:")[1].strip()
-
-        # Case 2: Successful return
-        return JsonResponse(
-            {
-                "status": "success",
-                "prediction": prediction,
-                "confidence": confidence,
-                "reasoning": reasoning,
-            }
-        )
+        return JsonResponse({
+            "status": "success",
+            "prediction": prediction,
+            "confidence": confidence,
+            "reasoning": reasoning,
+        })
 
     except Exception as e:
-        # Case 3: Error return (Crucial! If you skip this, it returns None)
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        import traceback
+        print(traceback.format_exc()) # Print the error to your terminal
+        return JsonResponse({"status": "error", "message": f"Server Error: {str(e)}"}, status=500)

@@ -146,6 +146,7 @@ async function updatePrediction() {
     const confValue = document.getElementById('confValue');
     const reasoningSec = document.getElementById('reasoningSection');
     const expandBtn = document.getElementById('expandBtn');
+    const useLocalModel = document.getElementById('localModelToggle').checked;
     
     // 1. Enter Loading State
     actionEl.style.display = "none";
@@ -162,7 +163,10 @@ async function updatePrediction() {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({})
+            // Pass the toggle state to Python
+            body: JSON.stringify({ 
+                useLocalModel: useLocalModel 
+            })
         });
         
         const data = await response.json();
