@@ -96,7 +96,7 @@ def getShumiActions() -> list[ShumiAction]:
                 shumi_action.since_prev_action_duration is not None
                 and shumi_action.since_prev_action_duration.total_seconds() < 0
             ):
-                print(shumi_action)
+                print(f"Mis-ordered action {shumi_action}")
 
         return shumi_actions
 
@@ -247,7 +247,7 @@ def getData(
         if is_predict_current_token:
             print(f"[Warning]  Is predicting the current token")
 
-    n = int(len(x) * 0.8)
+    n = int(len(x) * 0.85)
     return x[:n], y[:n], x[n:], y[n:]
 
 

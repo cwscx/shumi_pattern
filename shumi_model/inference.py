@@ -68,7 +68,7 @@ def predict_next_actions(
             )
 
             if action == Action.UNKNOWN_ACTION or since_prev_action_duration < 0:
-                print(f"unexpcted action {action} or {since_prev_action_duration}")
+                print(f"Unexpected action {action} or {since_prev_action_duration}")
                 continue
 
             last_event = actions[-1]
@@ -91,7 +91,6 @@ def predict_next_actions(
                 )
             days = (new_event_datetime.date() - BIRTHDAY).days
 
-            print(new_event_datetime, last_event_datetime)
             if new_event_datetime <= last_event_datetime:
                 print(f"Invalid timestamp {new_event_datetime}")
                 continue
