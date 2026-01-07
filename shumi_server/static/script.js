@@ -33,6 +33,7 @@ function addAction(actionType) {
 
 async function saveEntry(action) {
     const date = document.getElementById('currentDate').value.replaceAll('-', '/');
+    const timezone = document.getElementById('timezoneSelect').value;
     const timeStart = document.getElementById('timeStart').value;
     
     let actionItem = { action, time_start: timeStart };
@@ -49,6 +50,7 @@ async function saveEntry(action) {
 
     const payload = {
         date: date,
+        timezone: timezone,
         action_item: actionItem
     };
 
