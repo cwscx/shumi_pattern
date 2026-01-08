@@ -1,7 +1,18 @@
 // Set default date to today
 document.addEventListener('DOMContentLoaded', () => {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('currentDate').value = today;
+    const dateInput = document.getElementById('currentDate');
+    if (dateInput) {
+        // Get current date specifically in California time
+        const caliDate = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Los_Angeles',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(new Date());
+
+        // en-CA format returns YYYY-MM-DD which matches HTML date inputs
+        dateInput.value = caliDate;
+    }
 });
 
 function getCurrentTime() {

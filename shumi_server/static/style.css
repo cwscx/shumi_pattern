@@ -232,7 +232,7 @@ button { cursor: pointer; border: none; border-radius: 8px; font-weight: 600; tr
     display: inline-flex; /* Changed to inline-flex for better centering */
     align-items: center;
     gap: 12px;
-    margin: 0 auto 20px auto;
+    margin: 0 auto 0 auto;
 }
 
 .model-toggle-wrapper span {
