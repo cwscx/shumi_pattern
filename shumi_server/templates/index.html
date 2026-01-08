@@ -97,14 +97,6 @@
     <div class="card-header">
         <h3>🔮 幼崽行为预判</h3>
     </div>
-
-    <div class="model-toggle-wrapper" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-        <span style="font-size: 0.8rem; opacity: 0.9;">本地模型内核</span>
-        <label class="switch">
-            <input type="checkbox" id="localModelToggle">
-            <span class="slider round"></span>
-        </label>
-    </div>
     
     <div id="predictionDisplay" class="prediction-main">
         <div id="shumiLoader" class="shumi-loader" style="display: none;">
@@ -133,6 +125,14 @@
 
     <div class="prediction-controls">
         <button class="btn-get-forecast" id="forecastBtn" onclick="updatePrediction()">📡 发送信号</button>
+
+        <div class="model-toggle-wrapper">
+            <span>👨‍💻 爸爸牌预言机</span>
+            <label class="switch">
+                <input type="checkbox" id="localModelToggle">
+                <span class="slider round"></span>
+            </label>
+    </div>
         <button class="btn-expand" id="expandBtn" onclick="toggleReasoning()" style="display: none;">查看推理详情</button>
     </div>
 </div>

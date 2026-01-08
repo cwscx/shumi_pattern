@@ -150,9 +150,9 @@ def get_prediction(request):
                     local_model_output += f"{action_obj} with probability {prob * 100:.2f}%\n"
             except Exception as e:
                 local_model_output = f"Error running local model: {str(e)}"
+        print(local_model_output)
 
         # 4. Resolve JSON Path using Django Settings
-        # This fixes the "file not found" error in modular views
         json_path = os.path.join(settings.BASE_DIR, "shumi_server", "shumi.json")
         
         if not os.path.exists(json_path):

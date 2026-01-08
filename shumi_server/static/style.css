@@ -221,6 +221,89 @@ button { cursor: pointer; border: none; border-radius: 8px; font-weight: 600; tr
     100% { transform: scaleX(1); }
 }
 
+/* Local model toggle slider */
+/* --- Modern Local Model Toggle --- */
+.model-toggle-wrapper {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex; /* Changed to inline-flex for better centering */
+    align-items: center;
+    gap: 12px;
+    margin: 0 auto 20px auto;
+}
+
+.model-toggle-wrapper span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* The Switch Container */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The Slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.25);
+    transition: .4s;
+    border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* When checked: slider becomes Green */
+input:checked + .slider {
+    background-color: #4cd964; /* iOS Green */
+    box-shadow: 0 0 10px rgba(76, 217, 100, 0.4);
+}
+
+/* Move the circle when checked */
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* --- Added polish for the forecast button --- */
+.btn-get-forecast {
+    background: white;
+    color: #764ba2;
+    padding: 12px 35px;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    border: none;
+    cursor: pointer;
+}
+
 /* Three dots animation */
 .dot-ani::after {
     content: '';
@@ -260,7 +343,9 @@ button { cursor: pointer; border: none; border-radius: 8px; font-weight: 600; tr
 }
 
 
-/* AI Section */
+/********* AI Section **************/
+
+
 #userQuery {
     width: 100%;
     padding: 12px;
