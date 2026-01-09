@@ -1,3 +1,5 @@
+// [Deprecated]
+
 // Set default date to today
 document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('currentDate');
