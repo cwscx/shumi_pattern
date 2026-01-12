@@ -1,13 +1,7 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>施舒米 Tracker Pro</title>
-    <link rel="stylesheet" href="{% static 'style.css' %}">
-</head>
-<body>
+
+{% block content %}
 
 <div class="app-wrapper">
     <!-- <header>
@@ -166,5 +160,6 @@
 </script>
 <script type="module" src="{% static 'js/main.js' %}"></script>
 <!-- <script src="{% static 'script.js' %}"></script> -->
-</body>
-</html>
+<!-- </body>
+</html> -->
+{% endblock %}

@@ -24,6 +24,7 @@ from . import views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", views.index_view, name="index"),  # Template renderer
+    path('analytics/', views.analytics, name='analytics'),
     path("save-baby-data/", views.save_baby_data, name="save_data"),
     path("delete-action/", views.delete_baby_action, name="delete_data"),
     path("get-insights/", views.get_gemini_insights, name="get_insights"),

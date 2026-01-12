@@ -11,10 +11,6 @@ JSON_FILE_PATH = os.path.join(settings.BASE_DIR, "shumi_server", "shumi.json")
 
 
 def index_view(request):
-    # Get the current date in PST for the "Default Date" input
-    # If USE_TZ = False and TIME_ZONE is set, this returns PST
-    print("*******")
-    print("main_views.index_view called")
     current_pst_date = datetime.now().strftime("%Y-%m-%d")
     past_days_data = []
     if os.path.exists(JSON_FILE_PATH):
@@ -110,3 +106,22 @@ def index_view(request):
             "current_pst_date": current_pst_date,
         },
     )
+
+
+def analytics(request):
+    json_path = os.path.join(settings.BASE_DIR, "shumi_server", "shumi.json")
+    
+    # Default empty data if file missing
+    db = {"patterns": [], "info": {}}
+    
+    if os.path.exists(json_path):
+        with open(json_path, "r", encoding="utf-8") as file:
+            db = json.load(file)
+
+    # Pass the full patterns list so JS can calculate the rolling 24h totals
+    context = {
+        "patterns_json": json.dumps(db.get("patterns", [])),
+        "info": db.get("info", {}),
+        "active_page": "analytics" 
+    }
+    return render(request, "analytics.html", context)
