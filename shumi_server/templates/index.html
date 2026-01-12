@@ -51,6 +51,13 @@
 
     <div class="card chart-card">
         <h3>📈 米宝行为时间轴 (24h)</h3>
+        <div class="chart-timezone-controls">
+            <span>图表显示时区:</span>
+            <div class="tz-pill-group">
+                <button class="tz-pill active" id="btn-chart-pst" onclick="pivotChart('PST')">PST (加州)</button>
+                <button class="tz-pill" id="btn-chart-cst" onclick="pivotChart('CST')">CST (中国)</button>
+            </div>
+        </div>
         <div class="chart-container">
             <canvas id="routineChart"></canvas>
         </div>

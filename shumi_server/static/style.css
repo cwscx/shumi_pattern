@@ -516,7 +516,7 @@ input:checked + .slider:before {
 
 /*chart*/
 .chart-card {
-    height: 500px;
+    height: 600px;
     margin-bottom: 20px;
     padding: 20px;
     background: #ffffff;
@@ -530,4 +530,36 @@ input:checked + .slider:before {
 
 .chart-card h3 {
     margin-bottom: 20px;
+}
+.chart-timezone-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    font-size: 0.85rem;
+}
+
+.tz-pill-group {
+    display: flex;
+    background: #f0f0f0;
+    padding: 3px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+}
+
+.tz-pill {
+    padding: 5px 15px;
+    border-radius: 17px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.3s;
+    font-size: 0.75rem;
+}
+
+.tz-pill.active {
+    background: #764ba2;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
