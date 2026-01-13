@@ -1,26 +1,41 @@
 // static/js/analytics.js
+let milkPieChart = null; // Global to this module to allow for updates
+
 export function getRollingMilkTotal(patterns, targetMl) {
     const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+    const twentyFourHoursAgo = now.getTime() - (24 * 60 * 60 * 1000);
+    
     let total = 0;
+    let formulaTotal = 0;
+    let breastMilkTotal = 0;
 
     patterns.forEach(day => {
-        // day.date is "2026/01/11"
+        const cleanDate = day.date.replaceAll('/', '-');
         day.actions.forEach(action => {
             if (action.action === '喝奶' && action.volume) {
-                // Combine date and time to get absolute timestamp
-                const actionTime = new Date(`${day.date.replaceAll('/', '-')}T${action.time_start}`);
+                const actionTime = new Date(`${cleanDate} ${action.time_start}`);
                 
-                if (actionTime >= twentyFourHoursAgo && actionTime <= now) {
-                    const volume = parseInt(action.volume.replace('ml', ''));
+                if (!isNaN(actionTime) && actionTime.getTime() >= twentyFourHoursAgo && actionTime.getTime() <= now.getTime()) {
+                    const volume = parseInt(action.volume.replace(/[^0-9]/g, ''));
                     total += volume;
+
+                    // Categorize based on subType
+                    if (action.type === '配方奶') {
+                        formulaTotal += volume;
+                    } else {
+                        // Includes 瓶喂母乳 and 亲喂母乳
+                        breastMilkTotal += volume;
+                    }
                 }
             }
         });
     });
+
     updateHydrationUI(total, targetMl);
+    updateMilkPieChart(formulaTotal, breastMilkTotal);
     return total;
 }
+
 
 function updateHydrationUI(total, target) {
     const display = document.getElementById('rollingMilkDisplay');
@@ -45,4 +60,30 @@ function updateHydrationUI(total, target) {
         advice.innerText = "✅ 摄入充足！舒米现在状态很棒。";
         advice.style.color = "#2ed573";
     }
+}
+
+function updateMilkPieChart(formula, breast) {
+    const ctx = document.getElementById('milkTypeChart').getContext('2d');
+    
+    if (milkPieChart) milkPieChart.destroy();
+
+    milkPieChart = new Chart(ctx, {
+        type: 'doughnut', // Doughnut looks cleaner than a full pie
+        data: {
+            labels: ['配方奶', '母乳'],
+            datasets: [{
+                data: [formula, breast],
+                backgroundColor: ['#ff9f43', '#54a0ff'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+            },
+            cutout: '70%' // Makes it a thin ring
+        }
+    });
 }
