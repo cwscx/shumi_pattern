@@ -7,11 +7,6 @@
 
 {% block content %}
 <div class="analytics-container">
-    <!-- <header class="section-header">
-        <h2>📊 舒米飞行监测站</h2>
-        <p>基于当前时刻向前回溯 24 小时的生理数据</p>
-    </header> -->
-
     <div class="card hydration-card">
         <div class="hydration-main">
             <div class="hydration-stats">
@@ -31,9 +26,6 @@
 </div>
 
 <script id="patterns-data" type="application/json">{{ patterns_json|safe }}</script>
-
-{% endblock %}
-
-{% block extra_js %}
 <script type="module" src="{% static 'js/analytics_main.js' %}"></script>
+
 {% endblock %}

@@ -18,8 +18,6 @@ export function getRollingMilkTotal(patterns, targetMl) {
             }
         });
     });
-
-    updateHydrationUI(total, targetMl);
     return total;
 }
 
