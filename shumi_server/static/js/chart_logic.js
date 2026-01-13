@@ -6,7 +6,6 @@ let chartInstance = null;
 let originalData = null;
 
 export function initChart() {
-    console.error("initChart");
     const dataElement = document.getElementById('chart-data');
     if (!dataElement) return;
     const rawData = JSON.parse(dataElement.textContent);

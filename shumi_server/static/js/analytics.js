@@ -18,6 +18,7 @@ export function getRollingMilkTotal(patterns, targetMl) {
             }
         });
     });
+    updateHydrationUI(total, targetMl);
     return total;
 }
 
@@ -25,7 +26,10 @@ function updateHydrationUI(total, target) {
     const display = document.getElementById('rollingMilkDisplay');
     const liquid = document.getElementById('liquidLevel');
     const advice = document.getElementById('hydrationAdvice');
-
+    const targetDisplay = document.getElementById('milkTargetDisplay');
+    if (targetDisplay) {
+        targetDisplay.innerText = target;
+    }
     const percent = Math.min((total / target) * 100, 100);
     
     display.innerHTML = `${total} <span class="unit">ml</span>`;

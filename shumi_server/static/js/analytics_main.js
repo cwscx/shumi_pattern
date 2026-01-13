@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Data element not found!");
         return;
     }
-    console.error("analytics_main");
 
     try {
         console.log("analytics_main triggers analytics logic");

@@ -7,12 +7,16 @@
 
 {% block content %}
 <div class="analytics-container">
+
     <div class="card hydration-card">
         <div class="hydration-main">
             <div class="hydration-stats">
                 <h3>24h 滚动总奶量</h3>
                 <div id="rollingMilkDisplay" class="milk-count">-- <span class="unit">ml</span></div>
-                <div class="target-text">目标: {{ milk_target }}ml</div>
+                <div class="target-text">
+                <div class="target-text">
+                    目标: <span id="milkTargetDisplay">{{ milk_target }}</span>ml
+                </div>
             </div>
             <div class="hydration-visual">
                 <div class="liquid-container">
