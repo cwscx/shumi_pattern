@@ -1,5 +1,5 @@
 // static/js/analytics_main.js
-import { getRollingMilkTotal } from './analytics.js';
+import { getRollingMilkTotal, initFormulaTrend, getRollingSleepTotal } from './analytics.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const dataElement = document.getElementById('patterns-data');
@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const patterns = JSON.parse(dataElement.textContent);
         // We use 800 as default if milk_target from Django isn't easily accessible
         getRollingMilkTotal(patterns, 800); 
+        initFormulaTrend(patterns);
+        getRollingSleepTotal(patterns);
     } catch (e) {
         console.error("Failed to parse patterns data:", e);
     }

@@ -1,3 +1,32 @@
+/* Layout Container */
+.analytics-container {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Vertical gap between rows */
+}
+
+/* Side-by-Side Row */
+.metrics-row {
+    display: flex;
+    flex-wrap: wrap; /* Allows stacking on small mobile screens */
+    gap: 20px; /* Horizontal and vertical gap between the two cards */
+}
+
+/* Make each card take up half the width minus the gap */
+.metrics-row .card {
+    flex: 1;
+    min-width: 300px; /* Prevents cards from getting too squished */
+    margin: 0; /* Reset margins since we use 'gap' on the parent */
+}
+
+/* Full Width for the Trend Chart */
+.full-width {
+    width: 100%;
+}
+
+
+/* 24 hr rolling hydration card */
 .hydration-card {
     background: white;
     padding: 25px;
@@ -19,16 +48,6 @@
 
 .unit { font-size: 1rem; color: #a4b0be; }
 
-/* Liquid Animation */
-.liquid-container {
-    width: 60px;
-    height: 120px;
-    background: #f1f2f6;
-    border-radius: 10px;
-    position: relative;
-    overflow: hidden;
-    border: 3px solid #ced4da;
-}
 
 .liquid {
     position: absolute;
@@ -45,10 +64,19 @@
     background: rgba(255,255,255,0.3);
 }
 
+.chart-wrapper {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+    min-width: 320px;
+}
+
+
 .hydration-visuals-wrapper {
     display: flex;
     align-items: center;
-    gap: 30px; /* Space between bottle and pie */
+    gap: 15px; /* Space between bottle and pie */
 }
 
 .liquid-container {
@@ -62,6 +90,38 @@
 }
 
 .pie-container {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
+}
+
+/* sleep rolling card */
+
+.sleep-rolling-card {
+    background: #1a1a2e; /* Dark night blue */
+    color: white;
+    padding: 25px;
+    border-radius: 20px;
+    margin-top: 20px;
+}
+
+.sleep-rolling-card h3, .sleep-rolling-card .target-text {
+    color: #a2a2d0;
+}
+
+.sleep-count {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.moon-icon {
+    font-size: 4rem;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    transition: color 0.5s ease;
+}
+
+.sleep-advice {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    font-weight: 500;
 }

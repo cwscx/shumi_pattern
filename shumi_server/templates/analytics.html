@@ -7,38 +7,54 @@
 
 {% block content %}
 <div class="analytics-container">
+    
+    <div class="metrics-row">
+        
+        <div class="card hydration-card">
+            <div class="hydration-main">
+                <div class="hydration-stats">
+                    <h3>24h 滚动总奶量</h3>
+                    <div id="rollingMilkDisplay" class="milk-count">-- <span class="unit">ml</span></div>
+                    <div class="target-text">目标: <span id="milkTargetDisplay">{{ milk_target }}</span>ml</div>
+                </div>
+                <div class="hydration-visuals-wrapper">
+                    <div class="liquid-container">
+                        <div id="liquidLevel" class="liquid"></div>
+                    </div>
+                    <div class="pie-container">
+                        <canvas id="milkTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <p id="hydrationAdvice" class="hydration-advice">正在计算补水建议...</p>
+        </div>
 
-    <div class="card hydration-card">
-        <div class="hydration-main">
-            <div class="hydration-stats">
-                <h3>24h 滚动总奶量</h3>
-                <div id="rollingMilkDisplay" class="milk-count">-- <span class="unit">ml</span></div>
-                <div class="target-text">
-                <div class="target-text">
-                    目标: <span id="milkTargetDisplay">{{ milk_target }}</span>ml
+        <div class="card sleep-rolling-card">
+            <div class="sleep-main">
+                <div class="sleep-stats">
+                    <h3>24h 滚动总睡眠</h3>
+                    <div id="rollingSleepDisplay" class="sleep-count">-- <span class="unit">h</span></div>
+                    <div class="target-text">目标: 12-14h</div>
+                </div>
+                <div class="sleep-visual">
+                    <span id="sleepMoon" class="moon-icon">🌙</span>
                 </div>
             </div>
-            <div class="hydration-visuals-wrapper">
-            <div class="liquid-container">
-                <div id="liquidLevel" class="liquid"></div>
-            </div>
-            
-            <div class="pie-container">
-                <canvas id="milkTypeChart"></canvas>
-            </div>
+            <p id="sleepAdvice" class="sleep-advice">正在分析睡眠质量...</p>
         </div>
-            <div class="hydration-visual">
-                <div class="liquid-container">
-                    <div id="liquidLevel" class="liquid"></div>
-                </div>
-            </div>
+        
+    </div> <div class="card chart-card full-width">
+        <div class="card-header">
+            <h3>📈 配方奶占比趋势 (历史全纪录)</h3>
+            <p class="subtitle">监测母乳与配方奶的结构变化</p>
         </div>
-        <p id="hydrationAdvice" class="hydration-advice">正在计算补水建议...</p>
+        <div class="chart-wrapper" style="height: 250px;">
+            <canvas id="formulaTrendChart"></canvas>
+        </div>
     </div>
 
 </div>
 
 <script id="patterns-data" type="application/json">{{ patterns_json|safe }}</script>
 <script type="module" src="{% static 'js/analytics_main.js' %}"></script>
-
 {% endblock %}
