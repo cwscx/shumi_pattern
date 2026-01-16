@@ -1,5 +1,5 @@
 // static/js/analytics_main.js
-import { getRollingMilkTotal, initFormulaTrend, getRollingSleepTotal } from './analytics.js';
+import { getRollingMilkTotal, initFormulaTrend, getRollingSleepTotal, initBioClockChart } from './analytics.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const dataElement = document.getElementById('patterns-data');
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         getRollingMilkTotal(patterns, 800); 
         initFormulaTrend(patterns);
         getRollingSleepTotal(patterns);
+        initBioClockChart(patterns);
     } catch (e) {
         console.error("Failed to parse patterns data:", e);
     }

@@ -253,3 +253,87 @@ function updateSleepUI(hours) {
         moonIcon.style.color = "#2ed573";
     }
 }
+
+// static/js/analytics.js
+export function initBioClockChart(patterns) {
+    const ctx = document.getElementById('bioClockChart').getContext('2d');
+    const labels = [];
+    const bedtimeData = [];
+
+    // Sort history by date
+    const sortedPatterns = [...patterns].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    sortedPatterns.forEach(day => {
+        // Find the "Night Anchor": The first sleep block of the night.
+        // We look for the first sleep session starting after 5:00 PM (17:00) 
+        // OR very early morning (before 4:00 AM) if she stayed up late.
+        const nightSleepCandidates = day.actions.filter(a => {
+            if (a.action !== '睡眠') return false;
+            const [hrs] = a.time_start.split(':').map(Number);
+            return (hrs >= 17 || hrs <= 4);
+        }).sort((a, b) => {
+            // Logic: 17:00 comes first, 04:00 comes last
+            const getVal = h => h <= 4 ? h + 24 : h;
+            return getVal(parseInt(a.time_start)) - getVal(parseInt(b.time_start));
+        });
+
+        if (nightSleepCandidates.length > 0) {
+            const firstSleep = nightSleepCandidates[0];
+            const [hrs, mins] = firstSleep.time_start.split(':').map(Number);
+            
+            // Decimal conversion for the Y-axis
+            let decimalTime = hrs + (mins / 60);
+            
+            // To keep the line continuous on the 0-24 scale:
+            // If she falls asleep at 1:00 AM, it's 1.0. 
+            // If she falls asleep at 8:00 PM, it's 20.0.
+            labels.push(day.date);
+            bedtimeData.push(decimalTime);
+        }
+    });
+
+    window.bioClockChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '首个长睡眠开始时间 (PST)',
+                data: bedtimeData,
+                borderColor: '#6c5ce7',
+                backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                borderWidth: 3,
+                pointRadius: 4,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 0, 
+                    max: 24,
+                    ticks: {
+                        stepSize: 2,
+                        callback: v => v + ":00"
+                    },
+                    title: { display: true, text: '24小时制 (California PST)' }
+                },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            let v = ctx.parsed.y;
+                            let h = Math.floor(v);
+                            let m = Math.round((v - h) * 60);
+                            return `加州时间: ${h}:${m.toString().padStart(2, '0')} PST`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
